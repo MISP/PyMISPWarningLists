@@ -1,0 +1,19 @@
+language: python
+
+cache: pip
+
+python:
+    - "3.6"
+    - "3.6-dev"
+    - "nightly"
+
+install:
+    - pip install coveralls codecov jsonschema
+    - pip install .
+
+script:
+    - nosetests --with-coverage --cover-package=pymispwarninglists -d
+
+after_success:
+    - codecov
+    - coveralls

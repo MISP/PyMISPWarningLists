@@ -1,0 +1,3 @@
+[submodule "pymispwarninglists/data/misp-warninglists"]
+	path = pymispwarninglists/data/misp-warninglists
+	url = https://github.com/MISP/misp-warninglists.git
