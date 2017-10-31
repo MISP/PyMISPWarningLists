@@ -4,7 +4,7 @@ from setuptools import setup
 
 
 setup(
-    name='pymispwarninglist',
+    name='pymispwarninglists',
     version='0.1',
     author='Raphaël Vinot',
     author_email='raphael.vinot@circl.lu',
