@@ -51,6 +51,11 @@ class WarningList():
             to_return['matching_attributes'] = self.matching_attributes
         return to_return
 
+    def has_match(self, value):
+        if value in self.list:
+            return True
+        return False
+
 
 class WarningLists(collections.Mapping):
 
@@ -78,6 +83,13 @@ class WarningLists(collections.Mapping):
 
     def __iter__(self):
         return iter(self.warninglists)
+
+    def search(self, value):
+        matches = []
+        for name, wl in self.warninglists.items():
+            if wl.has_match(value):
+                matches.append(wl)
+        return matches
 
     def __len__(self):
         return len(self.warninglists)
