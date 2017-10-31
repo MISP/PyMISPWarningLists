@@ -15,12 +15,11 @@ except ImportError:
     HAS_JSONSCHEMA = False
 
 
-class EncodeWarningLists(JSONEncoder):
+class EncodeWarningList(JSONEncoder):
     def default(self, obj):
-        try:
-            return obj._json()
-        except AttributeError:
-            return JSONEncoder.default(self, obj)
+        if isinstance(obj, WarningList):
+            return obj.to_dict()
+        return JSONEncoder.default(self, obj)
 
 
 class PyMISPWarningListsError(Exception):
@@ -42,16 +41,19 @@ class WarningList():
         if self.warninglist.get('matching_attributes'):
             self.matching_attributes = self.warninglist['matching_attributes']
 
-    def _json(self):
-        to_return = {'list': self.list, 'name': self.name, 'description': self.description,
-                     'version': self.version}
+    def to_dict(self):
+        to_return = {'list': [str(e) for e in self.list], 'name': self.name,
+                     'description': self.description, 'version': self.version}
         if hasattr(self, 'type'):
             to_return['type'] = self.type
         if hasattr(self, 'matching_attributes'):
             to_return['matching_attributes'] = self.matching_attributes
         return to_return
 
-    def has_match(self, value):
+    def to_json(self):
+        return json.dumps(self.to_dict(), cls=EncodeWarningList)
+
+    def __contains__(self, value):
         if value in self.list:
             return True
         return False
@@ -87,8 +89,8 @@ class WarningLists(collections.Mapping):
     def search(self, value):
         matches = []
         for name, wl in self.warninglists.items():
-            if wl.has_match(value):
-                matches.append(wl)
+            if value in wl:
+               matches.append(wl)
         return matches
 
     def __len__(self):

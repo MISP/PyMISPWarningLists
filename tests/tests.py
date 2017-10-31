@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from pymispwarninglists import WarningLists, EncodeWarningLists
+from pymispwarninglists import WarningLists
 from glob import glob
 import os
 import json
@@ -20,7 +20,7 @@ class TestPyMISPWarningLists(unittest.TestCase):
                 warninglist = json.load(f)
             warninglists_from_files[warninglist['name']] = warninglist
         for name, w in self.warninglists.items():
-            out = w._json()
+            out = w.to_dict()
             self.assertDictEqual(out, warninglists_from_files[w.name])
 
     def test_validate_schema_warninglists(self):
@@ -28,4 +28,8 @@ class TestPyMISPWarningLists(unittest.TestCase):
 
     def test_json(self):
         for w in self.warninglists.values():
-            json.dumps(w, cls=EncodeWarningLists)
+            w.to_json()
+
+    def test_search(self):
+        results = self.warninglists.search('8.8.8.8')
+        self.assertEqual(results[0].name, 'List of known IPv4 public DNS resolvers')
