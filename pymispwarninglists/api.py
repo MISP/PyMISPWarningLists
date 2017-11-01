@@ -76,18 +76,10 @@ class WarningList():
         to_return = []
         for entry in self.list:
             try:
-                # Try if the entry is a network bloc
+                # Try if the entry is a network bloc or an IP
                 to_return.append(ip_network(entry))
-                continue
             except ValueError:
                 pass
-            try:
-                # Try if the entry is an IP
-                to_return.append(ip_address(entry))
-                continue
-            except ValueError:
-                pass
-            # Not an IP nor a network
         return to_return
 
     def _slow_search(self, value):
