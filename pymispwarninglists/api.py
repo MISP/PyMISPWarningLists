@@ -67,7 +67,7 @@ class WarningList():
         return to_return
 
     def to_json(self):
-        return json.dumps(self.to_dict(), cls=EncodeWarningList)
+        return json.dumps(self, cls=EncodeWarningList)
 
     def _fast_search(self, value):
         return value in self.list
