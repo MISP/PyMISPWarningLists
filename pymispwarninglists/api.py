@@ -7,6 +7,8 @@ import os
 import sys
 import collections
 from glob import glob
+from ipaddress import ip_address, ip_network
+
 
 try:
     import jsonschema
@@ -30,7 +32,7 @@ class PyMISPWarningListsError(Exception):
 
 class WarningList():
 
-    def __init__(self, warninglist):
+    def __init__(self, warninglist, slow_search=False):
         self.warninglist = warninglist
         self.list = self.warninglist['list']
         self.description = self.warninglist['description']
@@ -40,6 +42,20 @@ class WarningList():
             self.type = self.warninglist['type']
         if self.warninglist.get('matching_attributes'):
             self.matching_attributes = self.warninglist['matching_attributes']
+
+        self.slow_search = slow_search
+        self._network_objects = []
+
+        if self.slow_search:
+            self._network_objects = self._slow_index()
+        # If network objects is empty, reverting to default anyway
+        if not self._network_objects:
+            self.slow_search = False
+
+    def __contains__(self, value):
+        if self.slow_search:
+            return self._slow_search(value)
+        return self._fast_search(value)
 
     def to_dict(self):
         to_return = {'list': [str(e) for e in self.list], 'name': self.name,
@@ -53,22 +69,50 @@ class WarningList():
     def to_json(self):
         return json.dumps(self.to_dict(), cls=EncodeWarningList)
 
-    def __contains__(self, value):
-        if value in self.list:
-            return True
-        return False
+    def _fast_search(self, value):
+        return value in self.list
+
+    def _slow_index(self):
+        to_return = []
+        for entry in self.list:
+            try:
+                # Try if the entry is a network bloc
+                to_return.append(ip_network(entry))
+                continue
+            except ValueError:
+                pass
+            try:
+                # Try if the entry is an IP
+                to_return.append(ip_address(entry))
+                continue
+            except ValueError:
+                pass
+            # Not an IP nor a network
+        return to_return
+
+    def _slow_search(self, value):
+        try:
+            value = ip_address(value)
+        except ValueError:
+            # The value to search isn't an IP address, falling back to default
+            return self._fast_search(value)
+        for obj in self._network_objects:
+            if value == obj or value in obj:
+                return True
+        # If nothing has been found yet, fallback to default
+        return self._fast_search(value)
 
 
 class WarningLists(collections.Mapping):
 
-    def __init__(self):
+    def __init__(self, slow_search=False):
         self.root_dir_warninglists = os.path.join(os.path.abspath(os.path.dirname(sys.modules['pymispwarninglists'].__file__)),
                                                   'data', 'misp-warninglists', 'lists')
         self.warninglists = {}
         for warninglist_file in glob(os.path.join(self.root_dir_warninglists, '*', 'list.json')):
             with open(warninglist_file, 'r') as f:
                 warninglist = json.load(f)
-            self.warninglists[warninglist['name']] = WarningList(warninglist)
+            self.warninglists[warninglist['name']] = WarningList(warninglist, slow_search)
 
     def validate_with_schema(self):
         if not HAS_JSONSCHEMA:
