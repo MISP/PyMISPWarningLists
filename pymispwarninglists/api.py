@@ -38,8 +38,7 @@ class WarningList():
         self.description = self.warninglist['description']
         self.version = int(self.warninglist['version'])
         self.name = self.warninglist['name']
-        if self.warninglist.get('type'):
-            self.type = self.warninglist['type']
+        self.type = self.warninglist['type']
         if self.warninglist.get('matching_attributes'):
             self.matching_attributes = self.warninglist['matching_attributes']
 
@@ -59,9 +58,8 @@ class WarningList():
 
     def to_dict(self):
         to_return = {'list': [str(e) for e in self.list], 'name': self.name,
-                     'description': self.description, 'version': self.version}
-        if hasattr(self, 'type'):
-            to_return['type'] = self.type
+                     'description': self.description, 'version': self.version,
+                     'type': self.type}
         if hasattr(self, 'matching_attributes'):
             to_return['matching_attributes'] = self.matching_attributes
         return to_return
@@ -126,7 +124,7 @@ class WarningLists(collections.Mapping):
         matches = []
         for name, wl in self.warninglists.items():
             if value in wl:
-               matches.append(wl)
+                matches.append(wl)
         return matches
 
     def __len__(self):
