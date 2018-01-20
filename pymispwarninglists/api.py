@@ -8,6 +8,7 @@ import sys
 import collections
 from glob import glob
 from ipaddress import ip_address, ip_network
+import re
 
 
 try:
@@ -84,6 +85,20 @@ class WarningList():
                 pass
         return to_return
 
+    # Get a string containing a potential list of valid modifiers - "|" the valid ones
+    def setRegexFlags(modifiers):
+        set_flags = False
+        for modifier in modifiers:
+            add_flag = False
+            if modifier in ['i', 'm', 's', 'x']:
+                add_flag = getattr(re, modifier.upper())
+            if add_flag != False:
+                if set_flags != False:
+                    set_flags = set_flags | add_flag
+                else:
+                    set_flags = add_flag
+        return set_flags
+
     def _slow_search(self, value):
         if self.type == 'string':
             # Exact match only, using fast search
@@ -104,6 +119,33 @@ class WarningList():
                 # The value to search isn't an IP address, falling back to default
                 return self._fast_search(value)
             return any((value == obj or value in obj) for obj in self._network_objects)
+        elif self.type == 'regex':
+            for regex in mylist:
+                # PHP PCRE can have several delimiters such as /, #, + etc. Find out which it is
+                delimiter = regex[0]
+                # Find all of the potential delimiter characters, we only care about the first and last
+                delimiters = [m.start() for m in re.finditer(regex[0], regex)]
+                # If we don't have two delimiters the regex is incorrect, hop over it
+                if len(delimiters) < 2:
+                    continue
+                # If we have characters after the delimiter, extract them, they can be modifiers
+                modifiers = ""
+                if delimiters[-1] < len(regex):
+                    modifiers = regex[delimiters[-1]+1:]
+                # The actual regex is between the first and last delimiters
+                regex = regex[1:(delimiters[-1])]
+                flags = setRegexFlags(modifiers)
+                # Try to run the regex with modifiers or without depending on the above
+                try:
+                    if flags:
+                        if re.search(regex, value, flags):
+                            return True
+                    else:
+                        if re.search(regex, value):
+                            return False
+                except Exception:
+                    continue
+            return False
 
 
 class WarningLists(collections.Mapping):
