@@ -32,7 +32,7 @@ class PyMISPWarningListsError(Exception):
 
 class WarningList():
 
-    expected_types = ['string', 'substring', 'hostname', 'cidr']
+    expected_types = ['string', 'substring', 'hostname', 'cidr', 'regex']
 
     def __init__(self, warninglist, slow_search=False):
         self.warninglist = warninglist
