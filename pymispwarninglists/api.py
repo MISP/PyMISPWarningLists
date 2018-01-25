@@ -108,16 +108,20 @@ class WarningList():
 
 class WarningLists(collections.Mapping):
 
-    def __init__(self, slow_search=False):
+    def __init__(self, slow_search=False, lists=False):
         """Load all the warning lists from the package.
         :slow_search: If true, uses the most appropriate search method. Can be slower. Default: exact match.
+        :lists: A list of warning lists (typically fetched from a MISP instance)
         """
-        self.root_dir_warninglists = os.path.join(os.path.abspath(os.path.dirname(sys.modules['pymispwarninglists'].__file__)),
-                                                  'data', 'misp-warninglists', 'lists')
+        if not lists:
+            lists = []
+            self.root_dir_warninglists = os.path.join(os.path.abspath(os.path.dirname(sys.modules['pymispwarninglists'].__file__)),
+                                                      'data', 'misp-warninglists', 'lists')
+            for warninglist_file in glob(os.path.join(self.root_dir_warninglists, '*', 'list.json')):
+                with open(warninglist_file, 'r') as f:
+                    lists.append(json.load(f))
         self.warninglists = {}
-        for warninglist_file in glob(os.path.join(self.root_dir_warninglists, '*', 'list.json')):
-            with open(warninglist_file, 'r') as f:
-                warninglist = json.load(f)
+        for warninglist in lists:
             self.warninglists[warninglist['name']] = WarningList(warninglist, slow_search)
 
     def validate_with_schema(self):
