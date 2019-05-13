@@ -55,6 +55,9 @@ class WarningList():
         if not self._network_objects:
             self.slow_search = False
 
+    def __repr__(self):
+        return '<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'.format(self=self)
+
     def __contains__(self, value):
         if self.slow_search:
             return self._slow_search(value)
