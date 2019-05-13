@@ -3,16 +3,14 @@ language: python
 cache: pip
 
 python:
-    - "3.6"
     - "3.6-dev"
-    - "nightly"
+    - "3.7-dev"
 
 install:
-    - pip install coveralls codecov jsonschema
-    - pip install .
+    - pipenv install -d .
 
 script:
-    - nosetests --with-coverage --cover-package=pymispwarninglists -d
+    - pipenv run nosetests-3.4 --with-coverage --cover-package=pymispwarninglists -d
 
 after_success:
     - codecov
