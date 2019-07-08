@@ -51,9 +51,9 @@ class WarningList():
 
         if self.slow_search and self.type == 'cidr':
             self._network_objects = self._network_index()
-        # If network objects is empty, reverting to default anyway
-        if not self._network_objects:
-            self.slow_search = False
+            # If network objects is empty, reverting to default anyway
+            if not self._network_objects:
+                self.slow_search = False
 
     def __repr__(self):
         return '<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'.format(self=self)
