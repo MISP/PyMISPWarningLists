@@ -3,11 +3,11 @@
 
 import json
 from json import JSONEncoder
-import os
 import sys
 import collections
 from glob import glob
 from ipaddress import ip_address, ip_network
+from pathlib import Path
 
 
 try:
@@ -41,7 +41,7 @@ class WarningList():
         self.version = int(self.warninglist['version'])
         self.name = self.warninglist['name']
         if self.warninglist['type'] not in self.expected_types:
-            raise Exception('Unexpected type, please update the expected_type list')
+            raise PyMISPWarningListsError('Unexpected type, please update the expected_type list')
         self.type = self.warninglist['type']
         if self.warninglist.get('matching_attributes'):
             self.matching_attributes = self.warninglist['matching_attributes']
@@ -56,7 +56,7 @@ class WarningList():
                 self.slow_search = False
 
     def __repr__(self):
-        return '<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'.format(self=self)
+        return f'<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'
 
     def __contains__(self, value):
         if self.slow_search:
@@ -118,11 +118,12 @@ class WarningLists(collections.Mapping):
         """
         if not lists:
             lists = []
-            self.root_dir_warninglists = os.path.join(os.path.abspath(os.path.dirname(sys.modules['pymispwarninglists'].__file__)),
-                                                      'data', 'misp-warninglists', 'lists')
-            for warninglist_file in glob(os.path.join(self.root_dir_warninglists, '*', 'list.json')):
+            self.root_dir_warninglists = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'lists'
+            for warninglist_file in glob(str(self.root_dir_warninglists / '*' / 'list.json')):
                 with open(warninglist_file, 'r') as f:
                     lists.append(json.load(f))
+        if not lists:
+            raise PyMISPWarningListsError('Unable to load the lists. Do not forget to initialize the submodule (git submodule update --init).')
         self.warninglists = {}
         for warninglist in lists:
             self.warninglists[warninglist['name']] = WarningList(warninglist, slow_search)
@@ -130,8 +131,7 @@ class WarningLists(collections.Mapping):
     def validate_with_schema(self):
         if not HAS_JSONSCHEMA:
             raise ImportError('jsonschema is required: pip install jsonschema')
-        schema = os.path.join(os.path.abspath(os.path.dirname(sys.modules['pymispwarninglists'].__file__)),
-                              'data', 'misp-warninglists', 'schema.json')
+        schema = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'schema.json'
         with open(schema, 'r') as f:
             loaded_schema = json.load(f)
         for w in self.warninglists.values():
