@@ -44,3 +44,5 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertEqual(results[0].name, 'List of RFC 3849 CIDR blocks')
         results = self.warninglists.search('1e100.net')
         self.assertEqual(results[0].name, 'List of known google domains')
+        results = self.warninglists.search('something.files.1drv.com')
+        self.assertEqual(results[0].name, 'List of known microsoft domains')
