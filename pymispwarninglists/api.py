@@ -152,3 +152,6 @@ class WarningLists(collections.Mapping):
 
     def __len__(self):
         return len(self.warninglists)
+
+    def get_loaded_lists(self):
+        return self.warninglists
