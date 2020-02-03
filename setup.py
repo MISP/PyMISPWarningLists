@@ -25,5 +25,5 @@ setup(
     tests_requires=['nose'],
     test_suite='nose.collector',
     package_data={'pymispwarninglists': ['data/misp-warninglists/schema.json',
-                                         'data/misp-warninglists/*/*.json']}
+                                         'data/misp-warninglists/lists/*/*.json']}
 )
