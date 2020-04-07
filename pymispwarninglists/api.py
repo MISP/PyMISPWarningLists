@@ -32,7 +32,7 @@ class PyMISPWarningListsError(Exception):
 
 class WarningList():
 
-    expected_types = ['string', 'substring', 'hostname', 'cidr']
+    expected_types = ['string', 'substring', 'hostname', 'cidr', 'regex']
 
     def __init__(self, warninglist, slow_search=False):
         self.warninglist = warninglist
@@ -41,7 +41,7 @@ class WarningList():
         self.version = int(self.warninglist['version'])
         self.name = self.warninglist['name']
         if self.warninglist['type'] not in self.expected_types:
-            raise PyMISPWarningListsError('Unexpected type, please update the expected_type list')
+            raise PyMISPWarningListsError(f'Unexpected type ({self.warninglist["type"]}), please update the expected_type list')
         self.type = self.warninglist['type']
         if self.warninglist.get('matching_attributes'):
             self.matching_attributes = self.warninglist['matching_attributes']
