@@ -43,6 +43,6 @@ class TestPyMISPWarningLists(unittest.TestCase):
         results = self.warninglists.search('2001:DB8::34:1')
         self.assertEqual(results[0].name, 'List of RFC 3849 CIDR blocks')
         results = self.warninglists.search('1e100.net')
-        self.assertEqual(results[0].name, 'List of known google domains')
+        self.assertEqual(results[0].name, 'Top 1,000,000 most-used sites from Tranco')
         results = self.warninglists.search('something.files.1drv.com')
-        self.assertEqual(results[0].name, 'List of known microsoft domains')
+        self.assertEqual(results[0].name, 'Top 1,000,000 most-used sites from Tranco')
