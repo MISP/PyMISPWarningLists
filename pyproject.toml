@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "pymispwarninglists"
+version = "1.0"
+description = "Python API for the MISP warning lists."
+authors = ["Raphaël Vinot <raphael.vinot@circl.lu>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+
+classifiers=[
+    'License :: OSI Approved :: BSD License',
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Console',
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Telecommunications Industry',
+    'Programming Language :: Python',
+    'Topic :: Security',
+    'Topic :: Internet',
+]
+
+include = ["pymispwarninglists/data/misp-warninglists/schema.json",
+           "pymispwarninglists/data/misp-warninglists/lists/*/*.json"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+coveralls = "^2.0.0"
+
+[tool.poetry.dev-dependencies]
+codecov = "^2.0.22"
+jsonschema = "^3.2.0"
+nose = "^1.3.7"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
