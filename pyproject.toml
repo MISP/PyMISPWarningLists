@@ -5,6 +5,7 @@ description = "Python API for the MISP warning lists."
 authors = ["Raphaël Vinot <raphael.vinot@circl.lu>"]
 license = "BSD-3-Clause"
 readme = "README.md"
+repository = "https://github.com/MISP/PyMISPWarningLists/"
 
 classifiers=[
     'License :: OSI Approved :: BSD License',
