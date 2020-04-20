@@ -8,7 +8,7 @@ import collections
 from glob import glob
 from ipaddress import ip_address, ip_network
 from pathlib import Path
-
+from urllib.parse import urlparse
 
 try:
     import jsonschema
@@ -99,7 +99,10 @@ class WarningList():
             # Expected to match on hostnames in URLs (i.e. the search query is a URL)
             # So we do a reverse search if any of the entries in the list are present in the URL
             # i.e.: value = 'http://foo.blah.de/meh' self.list == ['blah.de', 'blah.fr']
-            return any(v in value for v in self.list)
+            parsed_url = urlparse(value)
+            if parsed_url.hostname:
+                value = parsed_url.hostname
+            return any(value.endswith(v) for v in self.list)
         elif self.type == 'cidr':
             try:
                 value = ip_address(value)
