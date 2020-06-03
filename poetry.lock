@@ -13,7 +13,7 @@ docs = ["sphinx", "zope.interface"]
 tests = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface"]
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
@@ -21,7 +21,7 @@ python-versions = "*"
 version = "2020.4.5.1"
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Universal encoding detector for Python 2 and 3"
 name = "chardet"
 optional = false
@@ -41,7 +41,7 @@ coverage = "*"
 requests = ">=2.7.9"
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Code coverage measurement for Python"
 name = "coverage"
 optional = false
@@ -52,7 +52,7 @@ version = "5.1"
 toml = ["toml"]
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Show coverage stats online via coveralls.io"
 name = "coveralls"
 optional = false
@@ -68,7 +68,7 @@ requests = ">=1.0.0"
 yaml = ["PyYAML (>=3.10)"]
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Pythonic argument parser, that will make you smile"
 name = "docopt"
 optional = false
@@ -76,7 +76,7 @@ python-versions = "*"
 version = "0.6.2"
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
@@ -141,7 +141,7 @@ version = "0.16.0"
 six = "*"
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Python HTTP for Humans."
 name = "requests"
 optional = false
@@ -167,7 +167,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 version = "1.15.0"
 
 [[package]]
-category = "main"
+category = "dev"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 name = "urllib3"
 optional = false
@@ -193,7 +193,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "2a9db1408cae40c66af5eb64edabc7c81656d2ef13f191e247a18b771efd8384"
+content-hash = "8c9634a2b8a7c67ef9aa9ae94fd0d314e850525776d7b53ab26f30bd869bb186"
 python-versions = "^3.6"
 
 [metadata.files]
