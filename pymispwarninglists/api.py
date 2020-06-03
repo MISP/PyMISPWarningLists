@@ -102,7 +102,7 @@ class WarningList():
             parsed_url = urlparse(value)
             if parsed_url.hostname:
                 value = parsed_url.hostname
-            return any(value.endswith(v) for v in self.list)
+            return any(value == v or value.endswith("."+v.lstrip(".")) for v in self.list)
         elif self.type == 'cidr':
             try:
                 value = ip_address(value)
