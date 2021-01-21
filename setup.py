@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from setuptools import setup
+from setuptools import setup  # type: ignore
 
 
 setup(
     name='pymispwarninglists',
-    version='0.2',
+    version='1.0-dev',
     author='Raphaël Vinot',
     author_email='raphael.vinot@circl.lu',
     maintainer='Raphaël Vinot',

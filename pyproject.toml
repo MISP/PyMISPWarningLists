@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pymispwarninglists"
-version = "1.0"
+version = "1.2"
 description = "Python API for the MISP warning lists."
 authors = ["Raphaël Vinot <raphael.vinot@circl.lu>"]
 license = "BSD-3-Clause"
@@ -29,6 +29,7 @@ coveralls = "^2.0.0"
 codecov = "^2.0.22"
 jsonschema = "^3.2.0"
 nose = "^1.3.7"
+mypy = "^0.790"
 
 [build-system]
 requires = ["poetry>=0.12"]
