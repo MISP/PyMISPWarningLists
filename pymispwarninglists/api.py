@@ -122,7 +122,7 @@ class WarningLists(collections.Mapping):
             lists = []
             self.root_dir_warninglists = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'lists'
             for warninglist_file in glob(str(self.root_dir_warninglists / '*' / 'list.json')):
-                with open(warninglist_file, 'r') as f:
+                with open(warninglist_file, mode='r', encoding="utf-8") as f:
                     lists.append(json.load(f))
         if not lists:
             raise PyMISPWarningListsError('Unable to load the lists. Do not forget to initialize the submodule (git submodule update --init).')
