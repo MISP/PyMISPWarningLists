@@ -16,7 +16,7 @@ class TestPyMISPWarningLists(unittest.TestCase):
     def test_dump_warninglists(self):
         warninglists_from_files = {}
         for warninglist_file in glob(os.path.join(self.warninglists.root_dir_warninglists, '*', 'list.json')):
-            with open(warninglist_file, 'r') as f:
+            with open(warninglist_file, mode='r', encoding="utf-8") as f:
                 warninglist = json.load(f)
             warninglists_from_files[warninglist['name']] = warninglist
         for name, w in self.warninglists.items():
