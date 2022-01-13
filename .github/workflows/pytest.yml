@@ -33,7 +33,7 @@ jobs:
 
     - name: Test with nosetests
       run: |
-        poetry run nosetests-3.4 --with-coverage --cover-package=pymispwarninglists -d
+        poetry run pytest --cov=pymispwarninglists tests/tests.py
         poetry run mypy .
 
     - name: Upload coverage to Codecov

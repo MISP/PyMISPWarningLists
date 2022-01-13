@@ -3,7 +3,7 @@
 
 import json
 import sys
-import collections
+from collections.abc import Mapping
 from glob import glob
 from ipaddress import ip_address, ip_network
 from pathlib import Path
@@ -111,7 +111,7 @@ class WarningList():
         return False
 
 
-class WarningLists(collections.Mapping):
+class WarningLists(Mapping):
 
     def __init__(self, slow_search: bool=False, lists: Optional[List]=None):
         """Load all the warning lists from the package.
@@ -120,7 +120,7 @@ class WarningLists(collections.Mapping):
         """
         if not lists:
             lists = []
-            self.root_dir_warninglists = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'lists'
+            self.root_dir_warninglists = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'lists'  # type: ignore
             for warninglist_file in glob(str(self.root_dir_warninglists / '*' / 'list.json')):
                 with open(warninglist_file, mode='r', encoding="utf-8") as f:
                     lists.append(json.load(f))
