@@ -1,4 +1,4 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .api import WarningLists
+from .api import WarningLists  # noqa

@@ -3,12 +3,16 @@
 
 import json
 import sys
+
 from collections.abc import Mapping
 from glob import glob
 from ipaddress import ip_address, ip_network
 from pathlib import Path
-from urllib.parse import urlparse
 from typing import Union, Dict, Any, List, Optional
+from urllib.parse import urlparse
+
+from . import tools
+from .exceptions import PyMISPWarningListsError
 
 try:
     import jsonschema  # type: ignore
@@ -20,12 +24,6 @@ except ImportError:
 def json_default(obj: 'WarningList') -> Union[Dict, str]:
     if isinstance(obj, WarningList):
         return obj.to_dict()
-
-
-class PyMISPWarningListsError(Exception):
-    def __init__(self, message: str):
-        super(PyMISPWarningListsError, self).__init__(message)
-        self.message = message
 
 
 class WarningList():
@@ -113,14 +111,22 @@ class WarningList():
 
 class WarningLists(Mapping):
 
-    def __init__(self, slow_search: bool=False, lists: Optional[List]=None):
+    def __init__(self, slow_search: bool=False, lists: Optional[List]=None, from_xdg_home: bool=False, path_to_repo: Optional[Path]= None):
         """Load all the warning lists from the package.
         :slow_search: If true, uses the most appropriate search method. Can be slower. Default: exact match.
         :lists: A list of warning lists (typically fetched from a MISP instance)
         """
         if not lists:
+            if from_xdg_home:
+                path_to_repo = tools.get_xdg_home_dir()
+                if not path_to_repo.exists():
+                    tools.update_warninglists()
+
+            if not path_to_repo or not path_to_repo.exists():
+                path_to_repo = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists'  # type: ignore
+
             lists = []
-            self.root_dir_warninglists = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'lists'  # type: ignore
+            self.root_dir_warninglists = path_to_repo / 'lists'
             for warninglist_file in glob(str(self.root_dir_warninglists / '*' / 'list.json')):
                 with open(warninglist_file, mode='r', encoding="utf-8") as f:
                     lists.append(json.load(f))

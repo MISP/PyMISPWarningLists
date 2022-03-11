@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
-from pymispwarninglists import WarningLists
-from glob import glob
-import os
 import json
+import os
+import unittest
+
+from glob import glob
+
+from pymispwarninglists import WarningLists, tools
 
 
 class TestPyMISPWarningLists(unittest.TestCase):
@@ -50,3 +52,9 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertEqual(results, [])
         results = self.warninglists.search('phishing.co.uk')
         self.assertEqual(results, [])
+
+    def test_fetch_xdg(self):
+        tools.update_warninglists()
+        self.assertTrue(tools.get_xdg_home_dir().exists())
+        warninglists = WarningLists(from_xdg_home=True)
+        self.assertEqual(len(warninglists), len(self.warninglists))
