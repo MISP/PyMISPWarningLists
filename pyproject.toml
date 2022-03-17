@@ -30,7 +30,7 @@ fetch_lists = ["requests"]
 
 [tool.poetry.dev-dependencies]
 jsonschema = "^4.4.0"
-mypy = "^0.931"
+mypy = "^0.941"
 pytest-cov = "^3.0.0"
 types-requests = "^2.27.11"
 
