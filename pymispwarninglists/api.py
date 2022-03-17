@@ -101,11 +101,11 @@ class WarningList():
             return any(value == v or value.endswith("." + v.lstrip(".")) for v in self.list)
         elif self.type == 'cidr':
             try:
-                value = ip_address(value)
+                ip_value = ip_address(value)
             except ValueError:
                 # The value to search isn't an IP address, falling back to default
                 return self._fast_search(value)
-            return any((value == obj or value in obj) for obj in self._network_objects)
+            return any((ip_value == obj or ip_value in obj) for obj in self._network_objects)
         return False
 
 
