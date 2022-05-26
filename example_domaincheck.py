@@ -12,9 +12,10 @@ from pymispwarninglists import WarningLists
 
 def init():
     '''
-        Template to get the module started
+        Template to get the module started.
+        If set slow_search=True, uses the most appropriate search method. Can be slower.
     '''
-    return WarningLists()
+    return WarningLists(slow_search=False)
 
 
 if __name__ == '__main__':
