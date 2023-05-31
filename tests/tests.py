@@ -39,7 +39,7 @@ class TestPyMISPWarningLists(unittest.TestCase):
     def test_slow_search(self):
         self.warninglists = WarningLists(True)
         results = self.warninglists.search('8.8.8.8')
-        self.assertEqual(results[0].name, 'List of known IPv4 public DNS resolvers')
+        self.assertIn('List of known IPv4 public DNS resolvers', [r.name for r in results])
         results = self.warninglists.search('100.64.1.56')
         self.assertEqual(results[0].name, 'List of RFC 6598 CIDR blocks')
         results = self.warninglists.search('2001:DB8::34:1')

@@ -33,6 +33,7 @@ class WarningList():
     def __init__(self, warninglist: Dict[str, Any], slow_search: bool=False):
         self.warninglist = warninglist
         self.list = self.warninglist['list']
+        self.set = set(self.list)
         self.description = self.warninglist['description']
         self.version = int(self.warninglist['version'])
         self.name = self.warninglist['name']
@@ -71,7 +72,7 @@ class WarningList():
         return json.dumps(self, default=json_default)
 
     def _fast_search(self, value) -> bool:
-        return value in self.list
+        return value in self.set
 
     def _network_index(self) -> List:
         to_return = []
