@@ -11,7 +11,7 @@ from glob import glob
 from ipaddress import  ip_network, IPv6Address, IPv4Address, IPv4Network, IPv6Network, _BaseNetwork, \
     AddressValueError, NetmaskValueError
 from pathlib import Path
-from typing import Union, Dict, Any, List, Optional
+from typing import Union, Dict, Any, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from . import tools
@@ -162,8 +162,8 @@ class WarningLists(Mapping):
 
 
 class NetworkFilter:
-    def __init__(self, digit_position: int, digit2filter: Optional[dict[int, Union[bool, "NetworkFilter"]]] = None):
-        self.digit2filter: dict[int, Union[bool, NetworkFilter]] = digit2filter or {0: False, 1: False}
+    def __init__(self, digit_position: int, digit2filter: Optional[Dict[int, Union[bool, "NetworkFilter"]]] = None):
+        self.digit2filter: Dict[int, Union[bool, NetworkFilter]] = digit2filter or {0: False, 1: False}
         self.digit_position = digit_position
 
     def __contains__(self, ip: int) -> bool:
@@ -199,7 +199,7 @@ class NetworkFilter:
         return isinstance(other, NetworkFilter) and self.digit_position == other.digit_position and self.digit2filter == other.digit2filter
 
 
-def compile_network_filters(values: list) -> tuple[NetworkFilter, NetworkFilter]:
+def compile_network_filters(values: list) -> Tuple[NetworkFilter, NetworkFilter]:
     networks = convert_networks(values)
 
     ipv4_filter = NetworkFilter(31)
@@ -212,7 +212,7 @@ def compile_network_filters(values: list) -> tuple[NetworkFilter, NetworkFilter]
     return ipv4_filter, ipv6_filter
 
 
-def convert_networks(values: list) -> list[_BaseNetwork]:
+def convert_networks(values: list) -> List[_BaseNetwork]:
     valid_ips = []
     invalid_ips = []
 
