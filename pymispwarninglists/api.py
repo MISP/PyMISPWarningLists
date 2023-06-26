@@ -8,10 +8,10 @@ import sys
 from collections.abc import Mapping
 from contextlib import suppress
 from glob import glob
-from ipaddress import  ip_network, IPv6Address, IPv4Address, IPv4Network, IPv6Network, _BaseNetwork, \
+from ipaddress import ip_network, IPv6Address, IPv4Address, IPv4Network, _BaseNetwork, \
     AddressValueError, NetmaskValueError
 from pathlib import Path
-from typing import Union, Dict, Any, List, Optional, Tuple
+from typing import Union, Dict, Any, List, Optional, Tuple, Sequence
 from urllib.parse import urlparse
 
 from . import tools
@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 def json_default(obj: 'WarningList') -> Union[Dict, str]:
     if isinstance(obj, WarningList):
         return obj.to_dict()
-
 
 
 class WarningList():
@@ -189,7 +188,7 @@ class NetworkFilter:
         if child is not True:
             child.append(net)
 
-    def _get_digit(self, ip:int) -> int:
+    def _get_digit(self, ip: int) -> int:
         return (ip >> self.digit_position) & 1
 
     def __repr__(self):
@@ -212,7 +211,7 @@ def compile_network_filters(values: list) -> Tuple[NetworkFilter, NetworkFilter]
     return ipv4_filter, ipv6_filter
 
 
-def convert_networks(values: list) -> List[_BaseNetwork]:
+def convert_networks(values: list) -> Sequence[_BaseNetwork]:
     valid_ips = []
     invalid_ips = []
 

@@ -6,7 +6,7 @@ import os
 import unittest
 
 from glob import glob
-from ipaddress import  IPv4Network
+from ipaddress import IPv4Network
 
 from pymispwarninglists import WarningLists, tools, WarningList
 from pymispwarninglists.api import compile_network_filters, NetworkFilter
@@ -63,6 +63,9 @@ class TestPyMISPWarningLists(unittest.TestCase):
 
 
 class TestCidrList(unittest.TestCase):
+
+    cidr_list: WarningList
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.cidr_list = WarningList(
