@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import json
+import logging
 import sys
 
 from collections.abc import Mapping
+from contextlib import suppress
 from glob import glob
-from ipaddress import ip_address, ip_network
+from ipaddress import ip_network, IPv6Address, IPv4Address, IPv4Network, _BaseNetwork, \
+    AddressValueError, NetmaskValueError
 from pathlib import Path
-from typing import Union, Dict, Any, List, Optional
+from typing import Union, Dict, Any, List, Optional, Tuple, Sequence
 from urllib.parse import urlparse
 
 from . import tools
@@ -19,6 +22,9 @@ try:
     HAS_JSONSCHEMA = True
 except ImportError:
     HAS_JSONSCHEMA = False
+
+
+logger = logging.getLogger(__name__)
 
 
 def json_default(obj: 'WarningList') -> Union[Dict, str]:
@@ -44,13 +50,9 @@ class WarningList():
             self.matching_attributes = self.warninglist['matching_attributes']
 
         self.slow_search = slow_search
-        self._network_objects = []
 
         if self.slow_search and self.type == 'cidr':
-            self._network_objects = self._network_index()
-            # If network objects is empty, reverting to default anyway
-            if not self._network_objects:
-                self.slow_search = False
+            self._ipv4_filter, self._ipv6_filter = compile_network_filters(self.list)
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'
@@ -74,16 +76,6 @@ class WarningList():
     def _fast_search(self, value) -> bool:
         return value in self.set
 
-    def _network_index(self) -> List:
-        to_return = []
-        for entry in self.list:
-            try:
-                # Try if the entry is a network bloc or an IP
-                to_return.append(ip_network(entry))
-            except ValueError:
-                pass
-        return to_return
-
     def _slow_search(self, value: str) -> bool:
         if self.type == 'string':
             # Exact match only, using fast search
@@ -101,12 +93,14 @@ class WarningList():
                 value = parsed_url.hostname
             return any(value == v or value.endswith("." + v.lstrip(".")) for v in self.list)
         elif self.type == 'cidr':
-            try:
-                ip_value = ip_address(value)
-            except ValueError:
-                # The value to search isn't an IP address, falling back to default
-                return self._fast_search(value)
-            return any((ip_value == obj or ip_value in obj) for obj in self._network_objects)
+            with suppress(AddressValueError, NetmaskValueError):
+                ipv4 = IPv4Address(value)
+                return int(ipv4) in self._ipv4_filter
+            with suppress(AddressValueError, NetmaskValueError):
+                ipv6 = IPv6Address(value)
+                return int(ipv6) in self._ipv6_filter
+            # The value to search isn't an IP address, falling back to default
+            return self._fast_search(value)
         return False
 
 
@@ -164,3 +158,70 @@ class WarningLists(Mapping):
 
     def get_loaded_lists(self):
         return self.warninglists
+
+
+class NetworkFilter:
+    def __init__(self, digit_position: int, digit2filter: Optional[Dict[int, Union[bool, "NetworkFilter"]]] = None):
+        self.digit2filter: Dict[int, Union[bool, NetworkFilter]] = digit2filter or {0: False, 1: False}
+        self.digit_position = digit_position
+
+    def __contains__(self, ip: int) -> bool:
+        child = self.digit2filter[self._get_digit(ip)]
+        if isinstance(child, bool):
+            return child
+
+        return ip in child
+
+    def append(self, net: _BaseNetwork) -> None:
+        digit = self._get_digit(int(net.network_address))
+
+        if net.max_prefixlen - net.prefixlen == self.digit_position:
+            self.digit2filter[digit] = True
+            return
+
+        child = self.digit2filter[digit]
+
+        if child is False:
+            child = NetworkFilter(self.digit_position - 1)
+            self.digit2filter[digit] = child
+
+        if child is not True:
+            child.append(net)
+
+    def _get_digit(self, ip: int) -> int:
+        return (ip >> self.digit_position) & 1
+
+    def __repr__(self):
+        return f"NetworkFilter(digit_position={self.digit_position}, digit2filter={self.digit2filter})"
+
+    def __eq__(self, other):
+        return isinstance(other, NetworkFilter) and self.digit_position == other.digit_position and self.digit2filter == other.digit2filter
+
+
+def compile_network_filters(values: list) -> Tuple[NetworkFilter, NetworkFilter]:
+    networks = convert_networks(values)
+
+    ipv4_filter = NetworkFilter(31)
+    ipv6_filter = NetworkFilter(127)
+
+    for net in networks:
+        root = ipv4_filter if isinstance(net, IPv4Network) else ipv6_filter
+        root.append(net)
+
+    return ipv4_filter, ipv6_filter
+
+
+def convert_networks(values: list) -> Sequence[_BaseNetwork]:
+    valid_ips = []
+    invalid_ips = []
+
+    for value in values:
+        try:
+            valid_ips.append(ip_network(value))
+        except ValueError:
+            invalid_ips.append(value)
+
+    if invalid_ips:
+        logger.warning(f'Invalid IPs found: {invalid_ips}')
+
+    return valid_ips
