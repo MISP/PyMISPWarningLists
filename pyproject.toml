@@ -23,16 +23,16 @@ include = ["pymispwarninglists/data/misp-warninglists/schema.json",
 
 [tool.poetry.dependencies]
 python = "^3.8"
-requests = {version = "^2.31.0", optional = true}
+requests = {version = "^2.32.3", optional = true}
 
 [tool.poetry.extras]
 fetch_lists = ["requests"]
 
 [tool.poetry.dev-dependencies]
-jsonschema = "^4.20.0"
-mypy = "^1.8.0"
-pytest-cov = "^4.1.0"
-types-requests = "^2.31.0.20240106"
+jsonschema = "^4.22.0"
+mypy = "^1.10.1"
+pytest-cov = "^5.0.0"
+types-requests = "^2.32.0.20240622"
 
 [build-system]
 requires = ["poetry_core>=1.1", "setuptools"]
