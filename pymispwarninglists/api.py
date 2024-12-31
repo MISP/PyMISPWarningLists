@@ -8,7 +8,7 @@ import sys
 from collections.abc import Mapping
 from contextlib import suppress
 from glob import glob
-from ipaddress import ip_network, IPv6Address, IPv4Address, IPv4Network, _BaseNetwork, \
+from ipaddress import ip_network, IPv6Address, IPv4Address, IPv4Network, IPv6Network, \
     AddressValueError, NetmaskValueError
 from pathlib import Path
 from typing import Union, Dict, Any, List, Optional, Tuple, Sequence
@@ -172,7 +172,7 @@ class NetworkFilter:
 
         return ip in child
 
-    def append(self, net: _BaseNetwork) -> None:
+    def append(self, net: IPv4Network | IPv6Network) -> None:
         digit = self._get_digit(int(net.network_address))
 
         if net.max_prefixlen - net.prefixlen == self.digit_position:
@@ -211,7 +211,7 @@ def compile_network_filters(values: list) -> Tuple[NetworkFilter, NetworkFilter]
     return ipv4_filter, ipv6_filter
 
 
-def convert_networks(values: list) -> Sequence[_BaseNetwork]:
+def convert_networks(values: list) -> Sequence[IPv4Network | IPv6Network]:
     valid_ips = []
     invalid_ips = []
 
