@@ -1,41 +1,44 @@
-[tool.poetry]
+[project]
 name = "pymispwarninglists"
-version = "1.6"
+version = "1.6.1"
 description = "Python API for the MISP warning lists."
-authors = ["Raphaël Vinot <raphael.vinot@circl.lu>"]
+authors = [{name="Raphaël Vinot", email="raphael.vinot@circl.lu"}]
 license = "BSD-3-Clause"
 readme = "README.md"
+requires-python = ">=3.9"
+
+dynamic = [ "classifiers" ]
+
+[project.urls]
 repository = "https://github.com/MISP/PyMISPWarningLists/"
 
+[tool.poetry]
 classifiers=[
-    'License :: OSI Approved :: BSD License',
     'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Telecommunications Industry',
-    'Programming Language :: Python',
     'Topic :: Security',
     'Topic :: Internet',
 ]
 
-include = ["pymispwarninglists/data/misp-warninglists/schema.json",
-           "pymispwarninglists/data/misp-warninglists/lists/*/*.json"]
+exclude = ["pymispwarninglists/data"]
+include = [
+    {path = "pymispwarninglists/data/misp-warninglists/schema.json", format = ["sdist", "wheel"]},
+    {path = "pymispwarninglists/data/misp-warninglists/lists/*/*.json" , format = ["sdist", "wheel"]}
+]
 
-[tool.poetry.dependencies]
-python = "^3.9"
-requests = {version = "^2.32.3", optional = true}
+[project.optional-dependencies]
+fetch_lists = ["requests (>=2.32.3)"]
 
-[tool.poetry.extras]
-fetch_lists = ["requests"]
-
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 jsonschema = "^4.23.0"
-mypy = "^1.14.1"
+mypy = "^1.15.0"
 pytest-cov = "^6.0.0"
 types-requests = "^2.32.0.20241016"
 
 [build-system]
-requires = ["poetry-core", "setuptools"]
+requires = ["poetry-core>=2.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
@@ -44,7 +47,7 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
 disallow_any_generics = true
-python_version = 3.8
+python_version = 3.9
 ignore_errors = false
 ignore_missing_imports = false
 strict_optional = true
