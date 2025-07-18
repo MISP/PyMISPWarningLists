@@ -32,7 +32,7 @@ include = [
 fetch_lists = ["requests (>=2.32.4)"]
 
 [tool.poetry.group.dev.dependencies]
-jsonschema = "^4.24.0"
+jsonschema = "^4.24.1"
 mypy = "^1.16.1"
 pytest-cov = "^6.2.1"
 types-requests = "^2.32.4.20250611"
