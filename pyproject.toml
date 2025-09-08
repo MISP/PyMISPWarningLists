@@ -34,7 +34,7 @@ fetch_lists = ["requests (>=2.32.4)"]
 [tool.poetry.group.dev.dependencies]
 jsonschema = "^4.25.0"
 mypy = "^1.17.1"
-pytest-cov = "^6.2.1"
+pytest-cov = "^6.3.0"
 types-requests = "^2.32.4.20250809"
 
 [build-system]
