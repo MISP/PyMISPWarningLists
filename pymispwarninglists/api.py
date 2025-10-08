@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
@@ -13,7 +12,8 @@ from glob import glob
 from ipaddress import ip_network, IPv6Address, IPv4Address, IPv4Network, IPv6Network, \
     AddressValueError, NetmaskValueError
 from pathlib import Path
-from typing import Union, Dict, Any, List, Optional, Tuple, Sequence
+from typing import Union, Dict, Any, List, Optional, Tuple
+from collections.abc import Sequence
 from urllib.parse import urlparse
 
 from . import tools
@@ -29,7 +29,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def json_default(obj: 'WarningList') -> Union[Dict, str]:
+def json_default(obj: WarningList) -> dict | str:
     if isinstance(obj, WarningList):
         return obj.to_dict()
 
@@ -38,7 +38,7 @@ class WarningList():
 
     expected_types = ['string', 'substring', 'hostname', 'cidr', 'regex']
 
-    def __init__(self, warninglist: Dict[str, Any], slow_search: bool=False):
+    def __init__(self, warninglist: dict[str, Any], slow_search: bool=False):
         self.warninglist = warninglist
         self.list = self.warninglist['list']
         self.set = set(self.list)
@@ -64,7 +64,7 @@ class WarningList():
             return self._slow_search(value)
         return self._fast_search(value)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         to_return = {'list': [str(e) for e in self.list], 'name': self.name,
                      'description': self.description, 'version': self.version,
                      'type': self.type}
@@ -108,7 +108,7 @@ class WarningList():
 
 class WarningLists(Mapping):
 
-    def __init__(self, slow_search: bool=False, lists: Optional[List]=None, from_xdg_home: bool=False, path_to_repo: Optional[Path]= None):
+    def __init__(self, slow_search: bool=False, lists: list | None=None, from_xdg_home: bool=False, path_to_repo: Path | None= None):
         """Load all the warning lists from the package.
         :slow_search: If true, uses the most appropriate search method. Can be slower. Default: exact match.
         :lists: A list of warning lists (typically fetched from a MISP instance)
@@ -120,12 +120,12 @@ class WarningLists(Mapping):
                     tools.update_warninglists()
 
             if not path_to_repo or not path_to_repo.exists():
-                path_to_repo = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists'  # type: ignore
+                path_to_repo = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists'  # type: ignore[arg-type]
 
             lists = []
             self.root_dir_warninglists = path_to_repo / 'lists'
             for warninglist_file in glob(str(self.root_dir_warninglists / '*' / 'list.json')):
-                with open(warninglist_file, mode='r', encoding="utf-8") as f:
+                with open(warninglist_file, encoding="utf-8") as f:
                     lists.append(json.load(f))
         if not lists:
             raise PyMISPWarningListsError('Unable to load the lists. Do not forget to initialize the submodule (git submodule update --init).')
@@ -137,7 +137,7 @@ class WarningLists(Mapping):
         if not HAS_JSONSCHEMA:
             raise ImportError('jsonschema is required: pip install jsonschema')
         schema = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'schema.json'
-        with open(schema, 'r') as f:
+        with open(schema) as f:
             loaded_schema = json.load(f)
         for w in self.warninglists.values():
             jsonschema.validate(w.warninglist, loaded_schema)
@@ -148,7 +148,7 @@ class WarningLists(Mapping):
     def __iter__(self):
         return iter(self.warninglists)
 
-    def search(self, value) -> List:
+    def search(self, value) -> list:
         matches = []
         for name, wl in self.warninglists.items():
             if value in wl:
@@ -163,8 +163,8 @@ class WarningLists(Mapping):
 
 
 class NetworkFilter:
-    def __init__(self, digit_position: int, digit2filter: Optional[Dict[int, Union[bool, "NetworkFilter"]]] = None):
-        self.digit2filter: Dict[int, Union[bool, NetworkFilter]] = digit2filter or {0: False, 1: False}
+    def __init__(self, digit_position: int, digit2filter: dict[int, bool | NetworkFilter] | None = None):
+        self.digit2filter: dict[int, bool | NetworkFilter] = digit2filter or {0: False, 1: False}
         self.digit_position = digit_position
 
     def __contains__(self, ip: int) -> bool:
@@ -200,7 +200,7 @@ class NetworkFilter:
         return isinstance(other, NetworkFilter) and self.digit_position == other.digit_position and self.digit2filter == other.digit2filter
 
 
-def compile_network_filters(values: list) -> Tuple[NetworkFilter, NetworkFilter]:
+def compile_network_filters(values: list) -> tuple[NetworkFilter, NetworkFilter]:
     networks = convert_networks(values)
 
     ipv4_filter = NetworkFilter(31)
