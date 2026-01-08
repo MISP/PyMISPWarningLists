@@ -1,6 +1,6 @@
 [project]
 name = "pymispwarninglists"
-version = "1.6.1"
+version = "1.7.0"
 description = "Python API for the MISP warning lists."
 authors = [{name="Raphaël Vinot", email="raphael.vinot@circl.lu"}]
 license = "BSD-3-Clause"
