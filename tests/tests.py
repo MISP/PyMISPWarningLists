@@ -11,7 +11,7 @@ from glob import glob
 from ipaddress import IPv4Network
 
 from pymispwarninglists import WarningLists, tools, WarningList
-from pymispwarninglists.api import compile_network_filters, NetworkFilter
+from pymispwarninglists.api import compile_network_filters, NetworkFilter, normalize_hostname
 
 
 class TestPyMISPWarningLists(unittest.TestCase):
@@ -62,6 +62,54 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertTrue(tools.get_xdg_home_dir().exists())
         warninglists = WarningLists(from_xdg_home=True)
         self.assertEqual(len(warninglists), len(self.warninglists))
+
+
+class TestHostnameList(unittest.TestCase):
+
+    hostname_list: WarningList
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.hostname_list = WarningList(
+            {
+                "list": ["blah.de", "UPPER.example.com"],
+                "description": "Test hostname list",
+                "version": 0,
+                "name": "Test hostname list",
+                "type": "hostname",
+            },
+            slow_search=True
+        )
+
+    def test_slow_search_hostname_plain(self):
+        assert "blah.de" in self.hostname_list
+        assert "sub.blah.de" in self.hostname_list
+        assert "http://sub.blah.de/meh" in self.hostname_list
+
+        assert "blah.fr" not in self.hostname_list
+        assert "notblah.de" not in self.hostname_list
+
+    def test_slow_search_hostname_is_case_insensitive(self):
+        assert "BLAH.DE" in self.hostname_list
+        assert "Sub.Blah.De" in self.hostname_list
+        # The entries of the list are normalized too.
+        assert "upper.example.com" in self.hostname_list
+        assert "sub.upper.example.com" in self.hostname_list
+
+    def test_slow_search_hostname_trailing_dot(self):
+        assert "blah.de." in self.hostname_list
+        assert "sub.blah.de." in self.hostname_list
+        assert "BLAH.DE." in self.hostname_list
+
+    def test_slow_search_hostname_with_port(self):
+        assert "blah.de:443" in self.hostname_list
+        assert "sub.blah.de:8080" in self.hostname_list
+        assert "http://blah.de:8080/meh" in self.hostname_list
+
+    def test_slow_search_hostname_normalization_keeps_ip_literals(self):
+        self.assertEqual(normalize_hostname("2001:DB8::1"), "2001:db8::1")
+        self.assertEqual(normalize_hostname("[2001:DB8::1]:443"), "2001:db8::1")
+        self.assertEqual(normalize_hostname("192.0.2.1:443"), "192.0.2.1")
 
 
 class TestCidrList(unittest.TestCase):
