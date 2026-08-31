@@ -37,6 +37,13 @@ mypy = "^2.1.0"
 pytest-cov = "^7.1.0"
 types-requests = "^2.33.0.20260508"
 
+[tool.pytest.ini_options]
+markers = [
+    "network: test requires internet access and fetches the upstream warning lists (deselected by default)",
+]
+# Network tests are opt-in: run them explicitly with `pytest -m network`.
+addopts = "-m 'not network'"
+
 [build-system]
 requires = ["poetry-core>=2.0"]
 build-backend = "poetry.core.masonry.api"

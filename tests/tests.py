@@ -9,6 +9,9 @@ import unittest
 
 from glob import glob
 from ipaddress import IPv4Network
+from pathlib import Path
+
+import pytest
 
 from pymispwarninglists import WarningLists, tools, WarningList
 from pymispwarninglists.api import compile_network_filters, NetworkFilter
@@ -57,11 +60,33 @@ class TestPyMISPWarningLists(unittest.TestCase):
         results = self.warninglists.search('phishing.co.uk')
         self.assertEqual(results, [])
 
-    def test_fetch_xdg(self):
-        tools.update_warninglists()
-        self.assertTrue(tools.get_xdg_home_dir().exists())
-        warninglists = WarningLists(from_xdg_home=True)
-        self.assertEqual(len(warninglists), len(self.warninglists))
+
+@pytest.mark.network
+def test_fetch_xdg(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Fetch the warning lists from upstream into a throw-away XDG data home.
+
+    Opt-in: this test is deselected by default (see the ``network`` marker
+    registered in pyproject.toml) because it downloads the upstream repository
+    and because ``update_warninglists`` wipes the XDG data directory before
+    extracting. Run it with ``pytest -m network``.
+    """
+    # Never let the fetch touch the data directory of whoever runs the tests.
+    monkeypatch.delenv('XDG_MISP_HOME', raising=False)
+    monkeypatch.setenv('XDG_DATA_HOME', str(tmp_path))
+    xdg_home_dir = tools.get_xdg_home_dir()
+    assert tmp_path in xdg_home_dir.parents, xdg_home_dir
+
+    tools.update_warninglists()
+    assert xdg_home_dir.exists()
+
+    fetched = WarningLists(from_xdg_home=True)
+    # Deliberately no comparison against the pinned submodule: upstream both adds
+    # and removes lists, so any relationship between the two sets goes stale. What
+    # this test asserts is that the fetch-and-load path works and yields usable lists.
+    assert len(fetched) > 0
+    for warninglist in fetched.values():
+        assert warninglist.name
+        assert warninglist.list is not None
 
 
 class TestCidrList(unittest.TestCase):
