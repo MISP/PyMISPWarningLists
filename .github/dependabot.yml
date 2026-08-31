@@ -15,3 +15,9 @@ updates:
     schedule:
       # Check for updates to GitHub Actions every weekday
       interval: "daily"
+
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      # Check for updates to the pinned misp-warninglists submodule every weekday
+      interval: "daily"
