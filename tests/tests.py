@@ -11,7 +11,7 @@ from glob import glob
 from ipaddress import IPv4Network
 
 from pymispwarninglists import WarningLists, tools, WarningList
-from pymispwarninglists.api import compile_network_filters, NetworkFilter
+from pymispwarninglists.api import compile_network_filters, NetworkFilter, PyMISPWarningListsError
 
 
 class TestPyMISPWarningLists(unittest.TestCase):
@@ -39,6 +39,12 @@ class TestPyMISPWarningLists(unittest.TestCase):
     def test_search(self):
         results = self.warninglists.search('8.8.8.8')
         self.assertEqual(results[0].name, 'List of known IPv4 public DNS resolvers')
+
+    def test_search_explicit_empty_lists_raises(self):
+        # An explicit empty list means "no lists", it must not silently fall
+        # back to loading the bundled dataset from disk.
+        with self.assertRaises(PyMISPWarningListsError):
+            WarningLists(lists=[])
 
     def test_slow_search(self):
         self.warninglists = WarningLists(True)
