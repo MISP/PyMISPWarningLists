@@ -64,6 +64,22 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertEqual(len(warninglists), len(self.warninglists))
 
 
+# Named so that it is collected by the "test_search or test_json" selection.
+def test_search_xdg_misp_home_set_in_environ(monkeypatch, tmp_path):
+    """get_xdg_home_dir() must record XDG_MISP_HOME in os.environ, not only via os.putenv."""
+    # setenv first so that monkeypatch records the "originally absent" state and
+    # restores it on teardown, even though we immediately remove the variable.
+    monkeypatch.setenv('XDG_MISP_HOME', 'placeholder')
+    monkeypatch.delenv('XDG_MISP_HOME')
+    monkeypatch.setenv('XDG_DATA_HOME', str(tmp_path))
+
+    result = tools.get_xdg_home_dir()
+
+    assert result == tmp_path / 'misp' / 'misp-warninglists'
+    assert os.environ.get('XDG_MISP_HOME') == str(tmp_path / 'misp')
+    assert os.getenv('XDG_MISP_HOME') == str(tmp_path / 'misp')
+
+
 class TestCidrList(unittest.TestCase):
 
     cidr_list: WarningList
