@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import unittest
 
 from glob import glob
@@ -62,6 +63,39 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertTrue(tools.get_xdg_home_dir().exists())
         warninglists = WarningLists(from_xdg_home=True)
         self.assertEqual(len(warninglists), len(self.warninglists))
+
+
+class TestUpdateWarningLists(unittest.TestCase):
+    """update_warninglists must never issue a request without a timeout."""
+
+    class _Boom(Exception):
+        pass
+
+    def test_json_update_warninglists_uses_timeout(self):
+        captured = {}
+
+        def fake_get(url, **kwargs):
+            captured.update(kwargs)
+            raise TestUpdateWarningLists._Boom()
+
+        real_get = tools.requests.get
+        old_home = os.environ.get('XDG_MISP_HOME')
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Point the XDG home at a throwaway directory: update_warninglists
+            # wipes it before downloading, and the real one must not be touched.
+            os.environ['XDG_MISP_HOME'] = tmpdir
+            tools.requests.get = fake_get
+            try:
+                with self.assertRaises(TestUpdateWarningLists._Boom):
+                    tools.update_warninglists()
+            finally:
+                tools.requests.get = real_get
+                if old_home is None:
+                    del os.environ['XDG_MISP_HOME']
+                else:
+                    os.environ['XDG_MISP_HOME'] = old_home
+        self.assertIn('timeout', captured)
+        self.assertIsNotNone(captured['timeout'])
 
 
 class TestCidrList(unittest.TestCase):
