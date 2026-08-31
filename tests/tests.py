@@ -126,6 +126,45 @@ class TestCidrList(unittest.TestCase):
         # 51.8.152.0 as integer is 864710656
         assert 856201216 in self.cidr_list
 
+    @staticmethod
+    def _cidr_list(*networks: str) -> WarningList:
+        return WarningList(
+            {
+                "list": list(networks),
+                "description": "Test CIDR list",
+                "version": 0,
+                "name": "Test CIDR list",
+                "type": "cidr",
+            },
+            slow_search=True
+        )
+
+    def test_ipv4_default_route(self):
+        cidr_list = self._cidr_list("0.0.0.0/0")
+
+        assert "0.0.0.0" in cidr_list
+        assert "8.8.8.8" in cidr_list
+        assert "255.255.255.255" in cidr_list
+
+        # An IPv6 address is not covered by the IPv4 default route
+        assert "2a01:4180:4051::400" not in cidr_list
+
+    def test_ipv6_default_route(self):
+        cidr_list = self._cidr_list("::/0")
+
+        assert "::" in cidr_list
+        assert "2a01:4180:4051::400" in cidr_list
+
+        # An IPv4 address is not covered by the IPv6 default route
+        assert "8.8.8.8" not in cidr_list
+
+    def test_default_route_next_to_other_networks(self):
+        # The default route matches everything, whichever order it is loaded in.
+        for networks in (("51.8.152.0/21", "0.0.0.0/0"), ("0.0.0.0/0", "51.8.152.0/21")):
+            cidr_list = self._cidr_list(*networks)
+            assert "51.8.152.0" in cidr_list, networks
+            assert "3.3.3.3" in cidr_list, networks
+
 
 class TestNetworkCompilation(unittest.TestCase):
     def test_simple_case(self):
@@ -160,6 +199,18 @@ class TestNetworkCompilation(unittest.TestCase):
             digit_position=31,
             digit2filter={
                 0: False,
+                1: True,
+            },
+        ), ipv4_filter
+
+    def test_default_route(self):
+        ipv4_filter, ipv6_filter = compile_network_filters([IPv4Network("0.0.0.0/0")])
+
+        assert ipv6_filter == NetworkFilter(127)
+        assert ipv4_filter == NetworkFilter(
+            digit_position=31,
+            digit2filter={
+                0: True,
                 1: True,
             },
         ), ipv4_filter
