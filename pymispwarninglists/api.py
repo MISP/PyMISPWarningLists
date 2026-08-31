@@ -34,6 +34,38 @@ def json_default(obj: WarningList) -> dict | str:
         return obj.to_dict()
 
 
+def normalize_hostname(value: str) -> str:
+    """Normalize a hostname so that the comparison is insensitive to the shape of the
+    value: extract the host out of an URL, drop a `:port` suffix, drop a single
+    trailing dot (fully qualified domain name) and casefold the result.
+    """
+    parsed_url = urlparse(value)
+    if parsed_url.hostname:
+        # The value is an URL, urlparse already dropped the port and lowercased the host.
+        value = parsed_url.hostname
+    else:
+        value = _strip_port(value)
+    value = value.casefold()
+    if value.endswith('.') and len(value) > 1:
+        # Fully qualified domain name (i.e. 'example.com.')
+        value = value[:-1]
+    return value
+
+
+def _strip_port(value: str) -> str:
+    """Remove a `:port` suffix from a bare host, leaving IPv6 literals alone."""
+    if value.startswith('['):
+        # Bracketed IPv6 literal, with or without a port (i.e. '[2001:db8::1]:443')
+        end = value.find(']')
+        if end != -1:
+            return value[1:end]
+        return value
+    host, separator, port = value.rpartition(':')
+    if separator and host and ':' not in host and port.isdigit():
+        return host
+    return value
+
+
 class WarningList():
 
     expected_types = ['string', 'substring', 'hostname', 'cidr', 'regex']
@@ -55,6 +87,9 @@ class WarningList():
 
         if self.slow_search and self.type == 'cidr':
             self._ipv4_filter, self._ipv6_filter = compile_network_filters(self.list)
+
+        if self.slow_search and self.type == 'hostname':
+            self._normalized_list: list[str] = [normalize_hostname(str(v)) for v in self.list]
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'
@@ -90,10 +125,8 @@ class WarningList():
             # Expected to match on hostnames in URLs (i.e. the search query is a URL)
             # So we do a reverse search if any of the entries in the list are present in the URL
             # i.e.: value = 'http://foo.blah.de/meh' self.list == ['blah.de', 'blah.fr']
-            parsed_url = urlparse(value)
-            if parsed_url.hostname:
-                value = parsed_url.hostname
-            return any(value == v or value.endswith("." + v.lstrip(".")) for v in self.list)
+            value = normalize_hostname(value)
+            return any(value == v or value.endswith("." + v.lstrip(".")) for v in self._normalized_list)
         elif self.type == 'cidr':
             with suppress(AddressValueError, NetmaskValueError):
                 ipv4 = IPv4Address(value)
