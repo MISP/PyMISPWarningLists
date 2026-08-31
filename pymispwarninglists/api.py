@@ -29,9 +29,10 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def json_default(obj: WarningList) -> dict | str:
+def json_default(obj: Any) -> dict:
     if isinstance(obj, WarningList):
         return obj.to_dict()
+    raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
 
 
 class WarningList():
