@@ -80,12 +80,13 @@ def test_fetch_xdg(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     assert xdg_home_dir.exists()
 
     fetched = WarningLists(from_xdg_home=True)
+    # Deliberately no comparison against the pinned submodule: upstream both adds
+    # and removes lists, so any relationship between the two sets goes stale. What
+    # this test asserts is that the fetch-and-load path works and yields usable lists.
     assert len(fetched) > 0
-    # Upstream main moves ahead of the pinned submodule, so it may well contain
-    # more lists than we do. It should not have lost any of ours.
-    pinned = WarningLists()
-    missing = set(pinned.keys()) - set(fetched.keys())
-    assert not missing, f'Lists in the pinned submodule but absent upstream: {sorted(missing)}'
+    for warninglist in fetched.values():
+        assert warninglist.name
+        assert warninglist.list is not None
 
 
 class TestCidrList(unittest.TestCase):

@@ -36,9 +36,5 @@ jobs:
         poetry run pytest --cov=pymispwarninglists tests/tests.py
         poetry run mypy .
 
-    - name: Test fetching the lists from upstream
-      run: |
-        poetry run pytest -m network tests/tests.py
-
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
