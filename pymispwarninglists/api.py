@@ -113,11 +113,14 @@ class WarningLists(Mapping):
         :slow_search: If true, uses the most appropriate search method. Can be slower. Default: exact match.
         :lists: A list of warning lists (typically fetched from a MISP instance)
         """
+        self.root_dir_warninglists: Path | None = None
         if not lists:
             if from_xdg_home:
                 path_to_repo = tools.get_xdg_home_dir()
                 if not path_to_repo.exists():
                     tools.update_warninglists()
+            elif path_to_repo is not None and not path_to_repo.exists():
+                raise PyMISPWarningListsError(f'The directory passed as path_to_repo does not exist: {path_to_repo}')
 
             if not path_to_repo or not path_to_repo.exists():
                 path_to_repo = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists'  # type: ignore[arg-type]
