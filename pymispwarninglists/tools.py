@@ -6,6 +6,7 @@ import shutil
 
 from io import BytesIO
 from pathlib import Path
+from typing import Optional, Tuple, Union
 from zipfile import ZipFile
 
 from .exceptions import PyMISPWarningListsError
@@ -33,13 +34,13 @@ def get_xdg_home_dir() -> Path:
     return xdg_home_dir / 'misp-warninglists'
 
 
-def update_warninglists():
+def update_warninglists(timeout: Optional[Union[float, Tuple[float, float]]] = (10, 300)):
     if not HAS_REQUESTS:
         raise PyMISPWarningListsError('Cannot update local warning lists, please install pymispwarninglists this way: pip install -E fetch_lists pymispwarninglists ')
     storage_dir = get_xdg_home_dir()
     if storage_dir.exists():
         shutil.rmtree(storage_dir)
-    r = requests.get('https://github.com/MISP/misp-warninglists/archive/refs/heads/main.zip')
+    r = requests.get('https://github.com/MISP/misp-warninglists/archive/refs/heads/main.zip', timeout=timeout)
     r.raise_for_status()
     with ZipFile(BytesIO(r.content)) as zipfile:
         zipfile.extractall(storage_dir.parent)
