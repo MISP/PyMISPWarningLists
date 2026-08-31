@@ -56,12 +56,64 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertEqual(results, [])
         results = self.warninglists.search('phishing.co.uk')
         self.assertEqual(results, [])
+        results = self.warninglists.search('security@example.com')
+        self.assertIn('Common contact e-mail addresses', [r.name for r in results])
+        results = self.warninglists.search('john.doe@example.com')
+        self.assertNotIn('Common contact e-mail addresses', [r.name for r in results])
+        results = self.warninglists.search('+4407700900123')
+        self.assertIn('Unattributed phone number.', [r.name for r in results])
 
     def test_fetch_xdg(self):
         tools.update_warninglists()
         self.assertTrue(tools.get_xdg_home_dir().exists())
         warninglists = WarningLists(from_xdg_home=True)
         self.assertEqual(len(warninglists), len(self.warninglists))
+
+
+class TestRegexList(unittest.TestCase):
+
+    regex_list: WarningList
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.regex_list = WarningList(
+            {
+                "list": [
+                    "/^(security|noc|abuse)@.*\\..*$/i",
+                    "#^[0-9]{4}-[0-9]{2}$#",
+                    "/((?:\\+|00)44)?07700900([0-9]{3})/g",
+                    # Malformed entries, they must be skipped instead of raising
+                    "",
+                    "/no-closing-delimiter",
+                    "/[unterminated-class/",
+                    "//i",
+                ],
+                "description": "Test regex list",
+                "version": 0,
+                "name": "Test regex list",
+                "type": "regex",
+            },
+            slow_search=True
+        )
+
+    def test_slow_search_regex_match(self):
+        assert "security@example.com" in self.regex_list
+        assert "abuse@example.org" in self.regex_list
+        assert "2021-05" in self.regex_list
+
+        assert "john.doe@example.com" not in self.regex_list
+        assert "2021-0501" not in self.regex_list
+
+    def test_slow_search_regex_modifiers(self):
+        # The 'i' modifier is honoured, the PCRE-only 'g' is ignored, not an error
+        assert "SECURITY@example.com" in self.regex_list
+        assert "+4407700900123" in self.regex_list
+
+    def test_slow_search_regex_malformed_entries_are_skipped(self):
+        # The four malformed entries are dropped, the three valid ones are kept
+        self.assertEqual(len(self.regex_list._compiled_regexes), 3)
+        # An empty pattern must not turn into a match-all
+        assert "not-in-any-of-the-patterns" not in self.regex_list
 
 
 class TestCidrList(unittest.TestCase):
