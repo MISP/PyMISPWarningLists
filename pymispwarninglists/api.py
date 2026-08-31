@@ -6,7 +6,7 @@ import json
 import logging
 import sys
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Iterator
 from contextlib import suppress
 from glob import glob
 from ipaddress import ip_network, IPv6Address, IPv4Address, IPv4Network, IPv6Network, \
@@ -29,7 +29,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def json_default(obj: WarningList) -> dict | str:
+def json_default(obj: WarningList) -> dict[str, Any] | str:
     if isinstance(obj, WarningList):
         return obj.to_dict()
 
@@ -59,12 +59,12 @@ class WarningList():
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'
 
-    def __contains__(self, value: str) -> bool:
+    def __contains__(self, value: str | int) -> bool:
         if self.slow_search:
             return self._slow_search(value)
         return self._fast_search(value)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         to_return = {'list': [str(e) for e in self.list], 'name': self.name,
                      'description': self.description, 'version': self.version,
                      'type': self.type}
@@ -75,10 +75,10 @@ class WarningList():
     def to_json(self) -> str:
         return json.dumps(self, default=json_default)
 
-    def _fast_search(self, value) -> bool:
+    def _fast_search(self, value: Any) -> bool:
         return value in self.set
 
-    def _slow_search(self, value: str) -> bool:
+    def _slow_search(self, value: Any) -> bool:
         if self.type == 'string':
             # Exact match only, using fast search
             return self._fast_search(value)
@@ -106,9 +106,9 @@ class WarningList():
         return False
 
 
-class WarningLists(Mapping):
+class WarningLists(Mapping[str, WarningList]):
 
-    def __init__(self, slow_search: bool=False, lists: list | None=None, from_xdg_home: bool=False, path_to_repo: Path | None= None):
+    def __init__(self, slow_search: bool=False, lists: list[dict[str, Any]] | None=None, from_xdg_home: bool=False, path_to_repo: Path | None= None) -> None:
         """Load all the warning lists from the package.
         :slow_search: If true, uses the most appropriate search method. Can be slower. Default: exact match.
         :lists: A list of warning lists (typically fetched from a MISP instance)
@@ -129,36 +129,36 @@ class WarningLists(Mapping):
                     lists.append(json.load(f))
         if not lists:
             raise PyMISPWarningListsError('Unable to load the lists. Do not forget to initialize the submodule (git submodule update --init).')
-        self.warninglists = {}
+        self.warninglists: dict[str, WarningList] = {}
         for warninglist in lists:
             self.warninglists[warninglist['name']] = WarningList(warninglist, slow_search)
 
-    def validate_with_schema(self):
+    def validate_with_schema(self) -> None:
         if not HAS_JSONSCHEMA:
             raise ImportError('jsonschema is required: pip install jsonschema')
-        schema = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'schema.json'
+        schema = Path(sys.modules['pymispwarninglists'].__file__).parent / 'data' / 'misp-warninglists' / 'schema.json'  # type: ignore[arg-type]
         with open(schema) as f:
             loaded_schema = json.load(f)
         for w in self.warninglists.values():
             jsonschema.validate(w.warninglist, loaded_schema)
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> WarningList:
         return self.warninglists[name]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self.warninglists)
 
-    def search(self, value) -> list:
+    def search(self, value: str | int) -> list[WarningList]:
         matches = []
         for name, wl in self.warninglists.items():
             if value in wl:
                 matches.append(wl)
         return matches
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.warninglists)
 
-    def get_loaded_lists(self):
+    def get_loaded_lists(self) -> dict[str, WarningList]:
         return self.warninglists
 
 
@@ -193,14 +193,14 @@ class NetworkFilter:
     def _get_digit(self, ip: int) -> int:
         return (ip >> self.digit_position) & 1
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"NetworkFilter(digit_position={self.digit_position}, digit2filter={self.digit2filter})"
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, NetworkFilter) and self.digit_position == other.digit_position and self.digit2filter == other.digit2filter
 
 
-def compile_network_filters(values: list) -> tuple[NetworkFilter, NetworkFilter]:
+def compile_network_filters(values: Sequence[str | IPv4Network | IPv6Network]) -> tuple[NetworkFilter, NetworkFilter]:
     networks = convert_networks(values)
 
     ipv4_filter = NetworkFilter(31)
@@ -213,9 +213,9 @@ def compile_network_filters(values: list) -> tuple[NetworkFilter, NetworkFilter]
     return ipv4_filter, ipv6_filter
 
 
-def convert_networks(values: list) -> Sequence[IPv4Network | IPv6Network]:
-    valid_ips = []
-    invalid_ips = []
+def convert_networks(values: Sequence[str | IPv4Network | IPv6Network]) -> Sequence[IPv4Network | IPv6Network]:
+    valid_ips: list[IPv4Network | IPv6Network] = []
+    invalid_ips: list[str | IPv4Network | IPv6Network] = []
 
     for value in values:
         try:

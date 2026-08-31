@@ -16,10 +16,10 @@ from pymispwarninglists.api import compile_network_filters, NetworkFilter
 
 class TestPyMISPWarningLists(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.warninglists = WarningLists()
 
-    def test_dump_warninglists(self):
+    def test_dump_warninglists(self) -> None:
         warninglists_from_files = {}
         for warninglist_file in glob(os.path.join(self.warninglists.root_dir_warninglists, '*', 'list.json')):
             with open(warninglist_file, mode='r', encoding="utf-8") as f:
@@ -29,18 +29,18 @@ class TestPyMISPWarningLists(unittest.TestCase):
             out = w.to_dict()
             self.assertDictEqual(out, warninglists_from_files[w.name])
 
-    def test_validate_schema_warninglists(self):
+    def test_validate_schema_warninglists(self) -> None:
         self.warninglists.validate_with_schema()
 
-    def test_json(self):
+    def test_json(self) -> None:
         for w in self.warninglists.values():
             w.to_json()
 
-    def test_search(self):
+    def test_search(self) -> None:
         results = self.warninglists.search('8.8.8.8')
         self.assertEqual(results[0].name, 'List of known IPv4 public DNS resolvers')
 
-    def test_slow_search(self):
+    def test_slow_search(self) -> None:
         self.warninglists = WarningLists(True)
         results = self.warninglists.search('8.8.8.8')
         self.assertIn('List of known IPv4 public DNS resolvers', [r.name for r in results])
@@ -57,7 +57,7 @@ class TestPyMISPWarningLists(unittest.TestCase):
         results = self.warninglists.search('phishing.co.uk')
         self.assertEqual(results, [])
 
-    def test_fetch_xdg(self):
+    def test_fetch_xdg(self) -> None:
         tools.update_warninglists()
         self.assertTrue(tools.get_xdg_home_dir().exists())
         warninglists = WarningLists(from_xdg_home=True)
@@ -86,14 +86,14 @@ class TestCidrList(unittest.TestCase):
             slow_search=True
         )
 
-    def test_exact_match(self):
+    def test_exact_match(self) -> None:
         assert "1.1.1.1" in self.cidr_list
         assert "2a01:4180:4051::400" in self.cidr_list
 
         assert "3.3.3.3" not in self.cidr_list
         assert "2a01:4180:4051::401" not in self.cidr_list
 
-    def test_ipv4_bloc(self):
+    def test_ipv4_bloc(self) -> None:
         # 51.8.152.0/21
         assert "51.8.152.0" in self.cidr_list
         assert "51.8.152.255" in self.cidr_list
@@ -108,7 +108,7 @@ class TestCidrList(unittest.TestCase):
         assert "51.8.160.128" in self.cidr_list
         assert "51.8.160.255" in self.cidr_list
 
-    def test_ipv6_bloc(self):
+    def test_ipv6_bloc(self) -> None:
         assert "2a01:4180:c003:8::" in self.cidr_list
         assert "2a01:4180:c003:8::1" in self.cidr_list
         assert "2a01:4180:c003:8::ffff" in self.cidr_list
@@ -117,18 +117,18 @@ class TestCidrList(unittest.TestCase):
         assert "2a01:4180:c003:7::ffff" not in self.cidr_list
         assert "2a01:4180:c003:10::" not in self.cidr_list
 
-    def test_search_for_ipv4_bloc(self):
+    def test_search_for_ipv4_bloc(self) -> None:
         assert "51.8.152.0/21" in self.cidr_list
 
         assert "51.8.152.0/22" not in self.cidr_list
 
-    def test_search_for_ipv4_as_int(self):
+    def test_search_for_ipv4_as_int(self) -> None:
         # 51.8.152.0 as integer is 864710656
         assert 856201216 in self.cidr_list
 
 
 class TestNetworkCompilation(unittest.TestCase):
-    def test_simple_case(self):
+    def test_simple_case(self) -> None:
         ipv4_filter, ipv6_filter = compile_network_filters([IPv4Network("160.0.0.0/3"), IPv4Network("192.0.0.0/2")])
 
         assert ipv6_filter == NetworkFilter(127)
@@ -152,7 +152,7 @@ class TestNetworkCompilation(unittest.TestCase):
             },
         ), ipv4_filter
 
-    def test_overwrite_with_bigger_network(self):
+    def test_overwrite_with_bigger_network(self) -> None:
         ipv4_filter, ipv6_filter = compile_network_filters([IPv4Network("192.0.0.0/2"), IPv4Network("128.0.0.0/1")])
 
         assert ipv6_filter == NetworkFilter(127)
@@ -164,7 +164,7 @@ class TestNetworkCompilation(unittest.TestCase):
             },
         ), ipv4_filter
 
-    def test_dont_overwrite_with_smaller_network(self):
+    def test_dont_overwrite_with_smaller_network(self) -> None:
         ipv4_filter, ipv6_filter = compile_network_filters([IPv4Network("128.0.0.0/1"), IPv4Network("192.0.0.0/2")])
 
         assert ipv6_filter == NetworkFilter(127)

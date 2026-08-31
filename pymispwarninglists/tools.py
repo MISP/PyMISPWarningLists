@@ -33,7 +33,7 @@ def get_xdg_home_dir() -> Path:
     return xdg_home_dir / 'misp-warninglists'
 
 
-def update_warninglists():
+def update_warninglists() -> None:
     if not HAS_REQUESTS:
         raise PyMISPWarningListsError('Cannot update local warning lists, please install pymispwarninglists this way: pip install -E fetch_lists pymispwarninglists ')
     storage_dir = get_xdg_home_dir()
