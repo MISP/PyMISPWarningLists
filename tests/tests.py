@@ -56,6 +56,9 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertEqual(results, [])
         results = self.warninglists.search('phishing.co.uk')
         self.assertEqual(results, [])
+        # A malformed URL must count as a non-match instead of aborting the scan.
+        results = self.warninglists.search('http://[/foo')
+        self.assertEqual(results, [])
 
     def test_fetch_xdg(self):
         tools.update_warninglists()
