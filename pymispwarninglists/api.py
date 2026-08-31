@@ -175,6 +175,12 @@ class NetworkFilter:
         return ip in child
 
     def append(self, net: IPv4Network | IPv6Network) -> None:
+        if net.max_prefixlen - net.prefixlen > self.digit_position:
+            # The network covers the whole address space handled by this filter,
+            # which only happens for a prefix length of 0 (the default route).
+            self.digit2filter = {0: True, 1: True}
+            return
+
         digit = self._get_digit(int(net.network_address))
 
         if net.max_prefixlen - net.prefixlen == self.digit_position:
