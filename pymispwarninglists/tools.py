@@ -3,6 +3,7 @@
 
 import os
 import shutil
+import tempfile
 
 from io import BytesIO
 from pathlib import Path
@@ -37,10 +38,25 @@ def update_warninglists():
     if not HAS_REQUESTS:
         raise PyMISPWarningListsError('Cannot update local warning lists, please install pymispwarninglists this way: pip install -E fetch_lists pymispwarninglists ')
     storage_dir = get_xdg_home_dir()
-    if storage_dir.exists():
-        shutil.rmtree(storage_dir)
     r = requests.get('https://github.com/MISP/misp-warninglists/archive/refs/heads/main.zip')
     r.raise_for_status()
-    with ZipFile(BytesIO(r.content)) as zipfile:
-        zipfile.extractall(storage_dir.parent)
-    os.rename(storage_dir.parent / 'misp-warninglists-main', storage_dir)
+    # Extract next to the final destination (same filesystem, so the swap below is a rename)
+    # and only replace the existing warning lists once the new ones are fully extracted.
+    tmp_dir = Path(tempfile.mkdtemp(prefix='misp-warninglists.', dir=storage_dir.parent))
+    try:
+        with ZipFile(BytesIO(r.content)) as zipfile:
+            zipfile.extractall(tmp_dir)
+        new_dir = tmp_dir / 'misp-warninglists-main'
+        if not new_dir.is_dir():
+            raise PyMISPWarningListsError('The downloaded archive does not contain a misp-warninglists-main directory.')
+        old_dir = tmp_dir / 'misp-warninglists-old'
+        if storage_dir.exists():
+            os.rename(storage_dir, old_dir)
+        try:
+            os.rename(new_dir, storage_dir)
+        except Exception:
+            if old_dir.exists():
+                os.rename(old_dir, storage_dir)
+            raise
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)

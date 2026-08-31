@@ -5,13 +5,18 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import unittest
 
 from glob import glob
+from io import BytesIO
 from ipaddress import IPv4Network
+from unittest import mock
+from zipfile import ZipFile
 
 from pymispwarninglists import WarningLists, tools, WarningList
 from pymispwarninglists.api import compile_network_filters, NetworkFilter
+from pymispwarninglists.exceptions import PyMISPWarningListsError
 
 
 class TestPyMISPWarningLists(unittest.TestCase):
@@ -62,6 +67,113 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertTrue(tools.get_xdg_home_dir().exists())
         warninglists = WarningLists(from_xdg_home=True)
         self.assertEqual(len(warninglists), len(self.warninglists))
+
+
+class TestUpdateWarninglists(unittest.TestCase):
+    """update_warninglists() must never destroy the local lists before it has a replacement."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        env = dict(os.environ)
+        env.pop('XDG_MISP_HOME', None)
+        env['XDG_DATA_HOME'] = self._tmp.name
+        patcher = mock.patch.dict(os.environ, env, clear=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.storage_dir = tools.get_xdg_home_dir()
+        (self.storage_dir / 'lists' / 'existing').mkdir(parents=True)
+        (self.storage_dir / 'lists' / 'existing' / 'list.json').write_text('{"name": "existing"}')
+
+    def _patch_requests(self, fake_get):
+        fake_requests = mock.Mock()
+        fake_requests.get.side_effect = fake_get
+        patcher = mock.patch.object(tools, 'requests', fake_requests)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        patcher = mock.patch.object(tools, 'HAS_REQUESTS', True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    @staticmethod
+    def _archive(entries):
+        buf = BytesIO()
+        with ZipFile(buf, mode='w') as zipfile:
+            for name, content in entries.items():
+                zipfile.writestr(name, content)
+        return buf.getvalue()
+
+    def _existing_content(self):
+        path = self.storage_dir / 'lists' / 'existing' / 'list.json'
+        return path.read_text() if path.is_file() else None
+
+    def _leftovers(self):
+        return sorted(p.name for p in self.storage_dir.parent.iterdir() if p.name != self.storage_dir.name)
+
+    def test_download_failure_keeps_existing_warninglists(self):
+        def boom(url):
+            raise ConnectionError('no network')
+
+        self._patch_requests(boom)
+        with self.assertRaises(ConnectionError):
+            tools.update_warninglists()
+        self.assertEqual(self._existing_content(), '{"name": "existing"}')
+        self.assertEqual(self._leftovers(), [])
+
+    def test_http_error_keeps_existing_warninglists(self):
+        def not_found(url):
+            response = mock.Mock()
+            response.raise_for_status.side_effect = RuntimeError('404 Not Found')
+            return response
+
+        self._patch_requests(not_found)
+        with self.assertRaises(RuntimeError):
+            tools.update_warninglists()
+        self.assertEqual(self._existing_content(), '{"name": "existing"}')
+        self.assertEqual(self._leftovers(), [])
+
+    def test_broken_archive_keeps_existing_warninglists(self):
+        def garbage(url):
+            response = mock.Mock()
+            response.raise_for_status.return_value = None
+            response.content = b'this is not a zip file'
+            return response
+
+        self._patch_requests(garbage)
+        with self.assertRaises(Exception):
+            tools.update_warninglists()
+        self.assertEqual(self._existing_content(), '{"name": "existing"}')
+        self.assertEqual(self._leftovers(), [])
+
+    def test_unexpected_archive_layout_keeps_existing_warninglists(self):
+        content = self._archive({'somewhere-else/lists/new/list.json': '{"name": "new"}'})
+
+        def wrong_layout(url):
+            response = mock.Mock()
+            response.raise_for_status.return_value = None
+            response.content = content
+            return response
+
+        self._patch_requests(wrong_layout)
+        with self.assertRaises(PyMISPWarningListsError):
+            tools.update_warninglists()
+        self.assertEqual(self._existing_content(), '{"name": "existing"}')
+        self.assertEqual(self._leftovers(), [])
+
+    def test_successful_update_replaces_warninglists(self):
+        content = self._archive({'misp-warninglists-main/lists/new/list.json': '{"name": "new"}'})
+
+        def ok(url):
+            response = mock.Mock()
+            response.raise_for_status.return_value = None
+            response.content = content
+            return response
+
+        self._patch_requests(ok)
+        tools.update_warninglists()
+        self.assertEqual((self.storage_dir / 'lists' / 'new' / 'list.json').read_text(), '{"name": "new"}')
+        self.assertFalse((self.storage_dir / 'lists' / 'existing').exists())
+        self.assertEqual(self._leftovers(), [])
 
 
 class TestCidrList(unittest.TestCase):
