@@ -35,7 +35,7 @@ def get_xdg_home_dir() -> Path:
 
 def update_warninglists():
     if not HAS_REQUESTS:
-        raise PyMISPWarningListsError('Cannot update local warning lists, please install pymispwarninglists this way: pip install -E fetch_lists pymispwarninglists ')
+        raise PyMISPWarningListsError('Cannot update local warning lists, please install pymispwarninglists this way: pip install "pymispwarninglists[fetch_lists]"')
     storage_dir = get_xdg_home_dir()
     if storage_dir.exists():
         shutil.rmtree(storage_dir)
