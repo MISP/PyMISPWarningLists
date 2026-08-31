@@ -24,7 +24,7 @@ def get_xdg_home_dir() -> Path:
             xdg_home_dir.mkdir(parents=True)
         return xdg_home_dir / 'misp-warninglists'
     if os.name != 'posix':
-        raise PyMISPWarningListsError('Cannot initialize XDG variable for OS {os.name}. Must be posix.')
+        raise PyMISPWarningListsError(f'Cannot initialize XDG variable for OS {os.name}. Must be posix.')
     shared_data_dir = Path(os.environ['XDG_DATA_HOME']) if os.environ.get('XDG_DATA_HOME') else Path.home() / '.local' / 'share'
     xdg_home_dir = shared_data_dir / 'misp'
     if not xdg_home_dir.exists():
