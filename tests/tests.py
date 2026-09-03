@@ -61,7 +61,14 @@ class TestPyMISPWarningLists(unittest.TestCase):
         tools.update_warninglists()
         self.assertTrue(tools.get_xdg_home_dir().exists())
         warninglists = WarningLists(from_xdg_home=True)
-        self.assertEqual(len(warninglists), len(self.warninglists))
+        # The XDG copy is downloaded live from misp-warninglists, while
+        # self.warninglists is loaded from the submodule pinned in this repo.
+        # The two legitimately diverge as soon as upstream adds a list, so
+        # asserting the counts are equal makes this test fail on every branch
+        # whenever the pin lags. Assert the fetch produced a usable set instead.
+        self.assertGreater(len(warninglists), 0)
+        self.assertIn('List of known IPv4 public DNS resolvers',
+                      [w.name for w in warninglists.values()])
 
 
 class TestCidrList(unittest.TestCase):
