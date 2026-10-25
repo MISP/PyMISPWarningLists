@@ -113,7 +113,7 @@ class WarningLists(Mapping):
         :slow_search: If true, uses the most appropriate search method. Can be slower. Default: exact match.
         :lists: A list of warning lists (typically fetched from a MISP instance)
         """
-        if not lists:
+        if lists is None:
             if from_xdg_home:
                 path_to_repo = tools.get_xdg_home_dir()
                 if not path_to_repo.exists():
@@ -128,7 +128,9 @@ class WarningLists(Mapping):
                 with open(warninglist_file, encoding="utf-8") as f:
                     lists.append(json.load(f))
         if not lists:
-            raise PyMISPWarningListsError('Unable to load the lists. Do not forget to initialize the submodule (git submodule update --init).')
+            raise PyMISPWarningListsError('No warning lists to load: an empty list was passed explicitly, or no '
+                                         'lists were found on disk. In the latter case, do not forget to initialize '
+                                         'the submodule (git submodule update --init).')
         self.warninglists = {}
         for warninglist in lists:
             self.warninglists[warninglist['name']] = WarningList(warninglist, slow_search)
