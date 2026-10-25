@@ -129,7 +129,7 @@ with [Poetry](https://python-poetry.org/docs/#installation):
 git clone --recurse-submodules https://github.com/MISP/PyMISPWarningLists.git
 cd PyMISPWarningLists
 poetry install -E fetch_lists
-poetry run pytest --cov=pymispwarninglists tests/tests.py
+poetry run pytest --cov=pymispwarninglists tests/test_pymispwarninglists.py
 poetry run mypy .
 ```
 
@@ -158,7 +158,7 @@ To update the data manually from the repository root:
 git submodule update --init --recursive
 git -C pymispwarninglists/data/misp-warninglists fetch origin main
 git -C pymispwarninglists/data/misp-warninglists checkout --detach origin/main
-poetry run pytest --cov=pymispwarninglists tests/tests.py
+poetry run pytest --cov=pymispwarninglists tests/test_pymispwarninglists.py
 poetry run mypy .
 git add pymispwarninglists/data/misp-warninglists
 ```
