@@ -10,7 +10,7 @@ Demo script for domain check against warninglists
 from pymispwarninglists import WarningLists
 
 
-def init():
+def init() -> WarningLists:
     '''
         Template to get the module started.
         If set slow_search=True, uses the most appropriate search method. Can be slower.
