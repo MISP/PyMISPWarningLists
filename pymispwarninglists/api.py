@@ -56,6 +56,12 @@ class WarningList():
         if self.slow_search and self.type == 'cidr':
             self._ipv4_filter, self._ipv6_filter = compile_network_filters(self.list)
 
+        if self.slow_search and self.type == 'hostname':
+            # Some lists use the leading-dot convention (i.e. '.example.com'), which is
+            # meant to cover the apex domain as well as its subdomains. Normalise the
+            # entries once here, the lists can be very large.
+            self._hostnames = [v.lstrip('.') for v in self.list]
+
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'
 
@@ -93,7 +99,7 @@ class WarningList():
             parsed_url = urlparse(value)
             if parsed_url.hostname:
                 value = parsed_url.hostname
-            return any(value == v or value.endswith("." + v.lstrip(".")) for v in self.list)
+            return any(value == v or value.endswith("." + v) for v in self._hostnames)
         elif self.type == 'cidr':
             with suppress(AddressValueError, NetmaskValueError):
                 ipv4 = IPv4Address(value)

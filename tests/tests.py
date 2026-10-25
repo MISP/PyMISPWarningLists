@@ -191,3 +191,37 @@ class TestNetworkCompilation(unittest.TestCase):
                 1: True,
             },
         ), ipv4_filter
+
+
+class TestHostnameList(unittest.TestCase):
+
+    hostname_list: WarningList
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.hostname_list = WarningList(
+            {
+                "list": [".example.com", "plain.org"],
+                "description": "Test hostname list",
+                "version": 0,
+                "name": "Test hostname list",
+                "type": "hostname",
+            },
+            slow_search=True
+        )
+
+    def test_slow_search_leading_dot_entry(self):
+        # An entry written in the leading-dot convention must match its own apex domain,
+        # and any subdomain of it.
+        assert "example.com" in self.hostname_list
+        assert "sub.example.com" in self.hostname_list
+        assert "http://example.com/path" in self.hostname_list
+
+        # A domain that merely ends with the same string, without a label boundary,
+        # must not match.
+        assert "notexample.com" not in self.hostname_list
+
+    def test_slow_search_entry_without_leading_dot(self):
+        assert "plain.org" in self.hostname_list
+        assert "sub.plain.org" in self.hostname_list
+        assert "notplain.org" not in self.hostname_list
