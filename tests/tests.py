@@ -11,7 +11,10 @@ import unittest
 from glob import glob
 from io import BytesIO
 from ipaddress import IPv4Network
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest import mock
+from unittest.mock import patch
 from zipfile import ZipFile
 
 from pymispwarninglists import WarningLists, tools, WarningList
@@ -63,10 +66,23 @@ class TestPyMISPWarningLists(unittest.TestCase):
         self.assertEqual(results, [])
 
     def test_fetch_xdg(self):
-        tools.update_warninglists()
-        self.assertTrue(tools.get_xdg_home_dir().exists())
-        warninglists = WarningLists(from_xdg_home=True)
-        self.assertEqual(len(warninglists), len(self.warninglists))
+        with TemporaryDirectory() as temp_dir, patch.dict(os.environ, {'XDG_MISP_HOME': temp_dir}):
+            tools.update_warninglists()
+            storage_dir = tools.get_xdg_home_dir()
+            self.assertEqual(storage_dir, Path(temp_dir) / 'misp-warninglists')
+            self.assertTrue(storage_dir.exists())
+            warninglists = WarningLists(from_xdg_home=True)
+            # Upstream main can contain newer or additional lists than the pinned submodule.
+            downloaded_lists = {}
+            for warninglist_file in (storage_dir / 'lists').glob('*/list.json'):
+                with warninglist_file.open(encoding='utf-8') as f:
+                    warninglist = json.load(f)
+                downloaded_lists[warninglist['name']] = warninglist
+            self.assertTrue(downloaded_lists)
+            self.assertEqual(
+                {name: warninglist.warninglist for name, warninglist in warninglists.items()},
+                downloaded_lists,
+            )
 
 
 class TestUpdateWarninglists(unittest.TestCase):
