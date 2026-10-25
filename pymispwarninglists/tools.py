@@ -29,7 +29,7 @@ def get_xdg_home_dir() -> Path:
     xdg_home_dir = shared_data_dir / 'misp'
     if not xdg_home_dir.exists():
         xdg_home_dir.mkdir(parents=True)
-    os.putenv('XDG_MISP_HOME', str(xdg_home_dir))
+    os.environ['XDG_MISP_HOME'] = str(xdg_home_dir)
     return xdg_home_dir / 'misp-warninglists'
 
 
