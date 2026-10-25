@@ -90,9 +90,12 @@ class WarningList():
             # Expected to match on hostnames in URLs (i.e. the search query is a URL)
             # So we do a reverse search if any of the entries in the list are present in the URL
             # i.e.: value = 'http://foo.blah.de/meh' self.list == ['blah.de', 'blah.fr']
-            parsed_url = urlparse(value)
-            if parsed_url.hostname:
-                value = parsed_url.hostname
+            # urlparse (and the .hostname property) raises ValueError on malformed
+            # URLs, fall back to using the raw value as the host in that case.
+            with suppress(ValueError):
+                parsed_url = urlparse(value)
+                if parsed_url.hostname:
+                    value = parsed_url.hostname
             return any(value == v or value.endswith("." + v.lstrip(".")) for v in self.list)
         elif self.type == 'cidr':
             with suppress(AddressValueError, NetmaskValueError):
