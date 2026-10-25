@@ -29,7 +29,7 @@ include = [
 ]
 
 [project.optional-dependencies]
-fetch_lists = ["requests (>=2.34.0)"]
+fetch_lists = ["requests (>=2.34.2)"]
 
 [tool.poetry.group.dev.dependencies]
 jsonschema = "^4.26.0"
