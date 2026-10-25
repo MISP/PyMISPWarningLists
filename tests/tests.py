@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from pymispwarninglists import WarningLists, tools, WarningList
-from pymispwarninglists.api import compile_network_filters, NetworkFilter
+from pymispwarninglists.api import compile_network_filters, NetworkFilter, PyMISPWarningListsError
 
 
 class TestPyMISPWarningLists(unittest.TestCase):
@@ -42,6 +42,17 @@ class TestPyMISPWarningLists(unittest.TestCase):
     def test_search(self):
         results = self.warninglists.search('8.8.8.8')
         self.assertEqual(results[0].name, 'List of known IPv4 public DNS resolvers')
+
+    def test_search_with_nonexistent_path_to_repo_raises(self):
+        with self.assertRaises(PyMISPWarningListsError):
+            WarningLists(path_to_repo=Path('/nonexistent-misp-warninglists-repo'))
+
+    def test_search_root_dir_is_none_when_lists_given(self):
+        warninglist = {'name': 'Test list', 'description': 'Test list',
+                       'version': 1, 'type': 'string', 'list': ['1.2.3.4']}
+        warninglists = WarningLists(lists=[warninglist])
+        self.assertIsNone(warninglists.root_dir_warninglists)
+        self.assertEqual(warninglists.search('1.2.3.4')[0].name, 'Test list')
 
     def test_slow_search(self):
         self.warninglists = WarningLists(True)
