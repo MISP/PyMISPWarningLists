@@ -57,7 +57,7 @@ class WarningList():
             self._ipv4_filter, self._ipv6_filter = compile_network_filters(self.list)
 
     def __repr__(self) -> str:
-        return f'<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'
+        return f'<{self.__class__.__name__}(name="{self.name}", type="{self.type}", version="{self.version}", description="{self.description}")>'
 
     def __contains__(self, value: str) -> bool:
         if self.slow_search:

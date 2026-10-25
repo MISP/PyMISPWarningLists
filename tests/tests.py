@@ -43,6 +43,14 @@ class TestPyMISPWarningLists(unittest.TestCase):
         results = self.warninglists.search('8.8.8.8')
         self.assertEqual(results[0].name, 'List of known IPv4 public DNS resolvers')
 
+    def test_repr(self):
+        w = self.warninglists['List of known IPv4 public DNS resolvers']
+        r = repr(w)
+        self.assertIn('name="List of known IPv4 public DNS resolvers"', r)
+        self.assertIn(f'type="{w.type}"', r)
+        self.assertIn(f'version="{w.version}"', r)
+        self.assertTrue(r.endswith('")>'), r)
+
     def test_slow_search(self):
         self.warninglists = WarningLists(True)
         results = self.warninglists.search('8.8.8.8')
