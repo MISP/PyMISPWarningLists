@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 
 from collections.abc import Mapping
@@ -27,6 +28,10 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+
+# PCRE modifiers that have a direct equivalent in the python re module.
+# Any other modifier (i.e. the PCRE-only 'g' or 'u') is ignored.
+PCRE_MODIFIERS_TO_FLAGS = {'i': re.I, 'm': re.M, 's': re.S, 'x': re.X}
 
 
 def json_default(obj: WarningList) -> dict | str:
@@ -55,6 +60,9 @@ class WarningList():
 
         if self.slow_search and self.type == 'cidr':
             self._ipv4_filter, self._ipv6_filter = compile_network_filters(self.list)
+
+        if self.slow_search and self.type == 'regex':
+            self._compiled_regexes = compile_regexes(self.list)
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}(type="{self.name}", version="{self.version}", description="{self.description}")'
@@ -103,6 +111,9 @@ class WarningList():
                 return int(ipv6) in self._ipv6_filter
             # The value to search isn't an IP address, falling back to default
             return self._fast_search(value)
+        elif self.type == 'regex':
+            # The entries are PCRE patterns, compiled at initialisation time
+            return any(compiled.search(value) for compiled in self._compiled_regexes)
         return False
 
 
@@ -211,6 +222,42 @@ def compile_network_filters(values: list) -> tuple[NetworkFilter, NetworkFilter]
         root.append(net)
 
     return ipv4_filter, ipv6_filter
+
+
+def compile_regexes(values: list) -> list[re.Pattern[str]]:
+    """Compile a list of PCRE style patterns (i.e. '/^foo$/i') to python regexes.
+
+    Invalid entries are skipped instead of raising, a warning list is not
+    expected to break the search of all the other entries.
+    """
+    compiled_regexes = []
+
+    for value in values:
+        if not value:
+            logger.debug('Skipping empty regex entry.')
+            continue
+        # The first character is the delimiter, the pattern is everything up to
+        # the last occurrence of that delimiter, the remainder are the modifiers.
+        delimiter = value[0]
+        end_of_pattern = value.rfind(delimiter)
+        if end_of_pattern < 1:
+            logger.debug(f'Skipping malformed regex (no closing delimiter): {value}')
+            continue
+        pattern = value[1:end_of_pattern]
+        if not pattern:
+            logger.debug(f'Skipping malformed regex (empty pattern): {value}')
+            continue
+
+        flags = 0
+        for modifier in value[end_of_pattern + 1:]:
+            flags |= PCRE_MODIFIERS_TO_FLAGS.get(modifier, 0)
+
+        try:
+            compiled_regexes.append(re.compile(pattern, flags))
+        except re.error as e:
+            logger.debug(f'Skipping invalid regex {value}: {e}')
+
+    return compiled_regexes
 
 
 def convert_networks(values: list) -> Sequence[IPv4Network | IPv6Network]:
