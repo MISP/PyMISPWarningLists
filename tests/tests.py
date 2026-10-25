@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from pymispwarninglists import WarningLists, tools, WarningList
-from pymispwarninglists.api import compile_network_filters, NetworkFilter
+from pymispwarninglists.api import compile_network_filters, NetworkFilter, json_default
 
 
 class TestPyMISPWarningLists(unittest.TestCase):
@@ -38,6 +38,10 @@ class TestPyMISPWarningLists(unittest.TestCase):
     def test_json(self):
         for w in self.warninglists.values():
             w.to_json()
+
+    def test_json_default_raises_on_unsupported_type(self):
+        with self.assertRaises(TypeError):
+            json.dumps(object(), default=json_default)
 
     def test_search(self):
         results = self.warninglists.search('8.8.8.8')
